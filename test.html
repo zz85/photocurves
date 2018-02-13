@@ -20,10 +20,50 @@
 					ctx.save();
 					ctx.scale(dpr, dpr);
 
+					ctx.fillStyle = '#444'
+					ctx.fillRect(0, 0, width, height);
 					var padding = 40;
+					var histoWidth = width - padding * 2;
+					var histoHeight = height - padding * 2;
 
 					// draw borders
-					ctx.strokeRect(padding, padding, width - padding * 2, height - padding * 2);
+					ctx.strokeRect(padding, padding, histoWidth, histoHeight);
+
+					// draw gradient strip
+					var gradient = ctx.createLinearGradient(0, histoHeight + padding, 0, padding - 10);
+					gradient.addColorStop(0, '#000');
+					gradient.addColorStop(1, '#fff');
+					ctx.fillStyle = gradient;
+					ctx.beginPath()
+					ctx.rect(padding - 10, padding, 10, histoHeight);
+					ctx.fill();
+					ctx.stroke();
+
+					var gradient = ctx.createLinearGradient(0, padding, histoWidth, 0);
+					gradient.addColorStop(0, '#000');
+					gradient.addColorStop(1, '#fff');
+					ctx.fillStyle = gradient;
+					ctx.beginPath()
+					ctx.rect(padding, padding + histoHeight, histoWidth, 10);
+					ctx.fill();
+					ctx.stroke();
+
+					ctx.lineWidth = 0.5;
+					// draw v grids
+					for (let i = 0; i < 4; i++) {
+						ctx.beginPath();
+						ctx.moveTo(padding + i * histoWidth / 4, padding);
+						ctx.lineTo(padding + i * histoWidth / 4, padding + histoHeight);
+						ctx.stroke();
+					}
+
+					// draw h grids
+					for (let i = 0; i < 4; i++) {
+						ctx.beginPath();
+						ctx.moveTo(padding, padding + i * histoHeight / 4);
+						ctx.lineTo(padding + histoWidth, padding + i * histoHeight / 4);
+						ctx.stroke();
+					}
 
 					ctx.restore();
 				}
