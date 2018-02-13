@@ -8,16 +8,29 @@
 
 				function resize() {
 					dpr = window.devicePixelRatio;
-					canvas.size = dpr * width;
+					canvas.width = dpr * width;
 					canvas.height = dpr * height;
 
-					canvas.style.width = width;
-					canvas.style.height = height;
+					canvas.style.width = `${width}px`;
+					canvas.style.height = `${height}px`;
 					canvas.style.border = '1px solid #ccc'
 				}
 
+				function draw() {
+					ctx.save();
+					ctx.scale(dpr, dpr);
+
+					var padding = 40;
+
+					// draw borders
+					ctx.strokeRect(padding, padding, width - padding * 2, height - padding * 2);
+
+					ctx.restore();
+				}
+
 				resize();
-				
+				draw();
+
 				return canvas;
 			}
 
