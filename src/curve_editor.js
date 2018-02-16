@@ -1,19 +1,30 @@
-function editor(width, height) {
-	var canvas = document.createElement('canvas');
-	var dpr;
-	var ctx = canvas.getContext('2d');
+class Editor {
+	constructor(width, height) {
+		this.width = width;
+		this.height = height;
+		const canvas = document.createElement('canvas');
 
-	function resize() {
-		dpr = window.devicePixelRatio;
+		this.ctx = canvas.getContext('2d');
+		this.canvas = canvas;
+		
+		this.resize();
+		this.draw();
+	}
+
+	resize() {
+		var dpr = window.devicePixelRatio;
+		const { canvas, width, height } = this;
 		canvas.width = dpr * width;
 		canvas.height = dpr * height;
 
 		canvas.style.width = `${width}px`;
 		canvas.style.height = `${height}px`;
 		canvas.style.border = '1px solid #ccc'
+		this.dpr = dpr;
 	}
 
-	function draw() {
+	draw() {
+		const { ctx, dpr, width, height } = this;
 		ctx.save();
 		ctx.scale(dpr, dpr);
 
@@ -69,9 +80,8 @@ function editor(width, height) {
 
 		ctx.restore();
 	}
+}
 
-	resize();
-	draw();
-
-	return canvas;
+function editor(width, height) {
+	return new Editor(width, height).canvas;
 }
