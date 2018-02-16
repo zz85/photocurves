@@ -2,6 +2,8 @@ class GridArea {
 	constructor(x, y) {
 		this.x = x;
 		this.y = y;
+
+		this.children = [new CurveElement(x => x * x)];
 	}
 
 	draw(ctx, histoWidth, histoHeight) {
@@ -36,7 +38,7 @@ class GridArea {
 
 class CurveElement {
 	constructor(equation) {
-		this.equation = equation || (x => y);
+		this.equation = equation || (x => x);
 	}
 
 	draw(ctx, histoWidth, histoHeight) {
@@ -49,8 +51,12 @@ class CurveElement {
 
 		for (let x = 1; x <= histoWidth; x++) {
 			t = x / histoWidth;
+			y = eq(t)
 			ctx.lineTo(x, (1 - y) * histoHeight)
 		}
+
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = '#999';
 		ctx.stroke();
 	}
 }
@@ -68,7 +74,7 @@ class Editor {
 			// console.log(e.offsetX, e.offsetY);
 		})
 
-		this.area = new GridArea();
+		this.children = [new GridArea(40, 40)];
 		
 		this.resize();
 		this.draw();
@@ -118,11 +124,20 @@ class Editor {
 		ctx.fill();
 		// ctx.stroke();
 
-		ctx.save();
-		ctx.translate(padding, padding);
-		this.area.draw(ctx, histoWidth, histoHeight);
-		ctx.restore();
+		this.drawChildren(this, ctx, histoWidth, histoHeight);
 
 		ctx.restore();
+	}
+
+	drawChildren(el, ctx, ...args) {
+		if (!el.children) return;
+
+		el.children.forEach(child => {
+			ctx.save();
+			ctx.translate(child.x || 0, child.y || 0);
+			child.draw(ctx, ...args);
+			this.drawChildren(child, ctx, ...args);
+			ctx.restore();
+		});
 	}
 }
