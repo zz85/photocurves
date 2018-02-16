@@ -20,14 +20,11 @@
 					ctx.save();
 					ctx.scale(dpr, dpr);
 
-					ctx.fillStyle = '#444'
+					ctx.fillStyle = '#555'
 					ctx.fillRect(0, 0, width, height);
 					var padding = 40;
 					var histoWidth = width - padding * 2;
 					var histoHeight = height - padding * 2;
-
-					// draw borders
-					ctx.strokeRect(padding, padding, histoWidth, histoHeight);
 
 					// draw gradient strip
 					var gradient = ctx.createLinearGradient(0, histoHeight + padding, 0, padding - 10);
@@ -37,7 +34,7 @@
 					ctx.beginPath()
 					ctx.rect(padding - 10, padding, 10, histoHeight);
 					ctx.fill();
-					ctx.stroke();
+					// ctx.stroke();
 
 					var gradient = ctx.createLinearGradient(0, padding, histoWidth, 0);
 					gradient.addColorStop(0, '#000');
@@ -46,9 +43,17 @@
 					ctx.beginPath()
 					ctx.rect(padding, padding + histoHeight, histoWidth, 10);
 					ctx.fill();
-					ctx.stroke();
+					// ctx.stroke();
 
-					ctx.lineWidth = 0.5;
+					ctx.strokeStyle = '#333';
+
+					// draw borders
+					ctx.beginPath();
+					ctx.rect(padding, padding, histoWidth, histoHeight);
+					ctx.stroke();
+					ctx.fillStyle = '#444';
+					ctx.fill();
+
 					// draw v grids
 					for (let i = 0; i < 4; i++) {
 						ctx.beginPath();
@@ -74,7 +79,7 @@
 				return canvas;
 			}
 
-			var dom = editor(400, 400);
+			var dom = editor(350, 350);
 			document.body.appendChild(dom);
 		</script>
 	</body>
