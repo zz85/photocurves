@@ -1,3 +1,60 @@
+class GridArea {
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+	}
+
+	draw(ctx, histoWidth, histoHeight) {
+		ctx.strokeStyle = '#333';
+
+		// draw borders
+		ctx.beginPath();
+		ctx.rect(0, 0, histoWidth, histoHeight);
+		ctx.stroke();
+		ctx.fillStyle = '#444';
+		ctx.fill();
+
+		const GRIDS = 4;
+
+		// draw v grids
+		for (let i = 0; i < GRIDS; i++) {
+			ctx.beginPath();
+			ctx.moveTo(i * histoWidth / GRIDS, 0);
+			ctx.lineTo(i * histoWidth / GRIDS, histoHeight);
+			ctx.stroke();
+		}
+
+		// draw h grids
+		for (let i = 0; i < GRIDS; i++) {
+			ctx.beginPath();
+			ctx.moveTo(0, i * histoHeight / GRIDS);
+			ctx.lineTo(histoWidth, i * histoHeight / GRIDS);
+			ctx.stroke();
+		}
+	}
+}
+
+class CurveElement {
+	constructor(equation) {
+		this.equation = equation || (x => y);
+	}
+
+	draw(ctx, histoWidth, histoHeight) {
+		const eq = this.equation;
+
+		let t = 0;
+		let y = eq(t);
+		ctx.beginPath();
+		ctx.moveTo(0, (1 - y) * histoHeight);
+
+		for (let x = 1; x <= histoWidth; x++) {
+			t = x / histoWidth;
+			ctx.lineTo(x, (1 - y) * histoHeight)
+		}
+		ctx.stroke();
+	}
+}
+
 class Editor {
 	constructor(width, height) {
 		this.width = width;
@@ -6,6 +63,12 @@ class Editor {
 
 		this.ctx = canvas.getContext('2d');
 		this.canvas = canvas;
+
+		canvas.addEventListener('mousemove', (e) => {
+			// console.log(e.offsetX, e.offsetY);
+		})
+
+		this.area = new GridArea();
 		
 		this.resize();
 		this.draw();
@@ -30,17 +93,19 @@ class Editor {
 
 		ctx.fillStyle = '#555'
 		ctx.fillRect(0, 0, width, height);
+
 		var padding = 40;
+		var stripWidth =  10;
 		var histoWidth = width - padding * 2;
 		var histoHeight = height - padding * 2;
 
 		// draw gradient strip
-		var gradient = ctx.createLinearGradient(0, histoHeight + padding, 0, padding - 10);
+		var gradient = ctx.createLinearGradient(0, histoHeight + padding, 0, padding - stripWidth);
 		gradient.addColorStop(0, '#000');
 		gradient.addColorStop(1, '#fff');
 		ctx.fillStyle = gradient;
 		ctx.beginPath()
-		ctx.rect(padding - 10, padding, 10, histoHeight);
+		ctx.rect(padding - stripWidth, padding, stripWidth, histoHeight);
 		ctx.fill();
 		// ctx.stroke();
 
@@ -49,39 +114,15 @@ class Editor {
 		gradient.addColorStop(1, '#fff');
 		ctx.fillStyle = gradient;
 		ctx.beginPath()
-		ctx.rect(padding, padding + histoHeight, histoWidth, 10);
+		ctx.rect(padding, padding + histoHeight, histoWidth, stripWidth);
 		ctx.fill();
 		// ctx.stroke();
 
-		ctx.strokeStyle = '#333';
-
-		// draw borders
-		ctx.beginPath();
-		ctx.rect(padding, padding, histoWidth, histoHeight);
-		ctx.stroke();
-		ctx.fillStyle = '#444';
-		ctx.fill();
-
-		// draw v grids
-		for (let i = 0; i < 4; i++) {
-			ctx.beginPath();
-			ctx.moveTo(padding + i * histoWidth / 4, padding);
-			ctx.lineTo(padding + i * histoWidth / 4, padding + histoHeight);
-			ctx.stroke();
-		}
-
-		// draw h grids
-		for (let i = 0; i < 4; i++) {
-			ctx.beginPath();
-			ctx.moveTo(padding, padding + i * histoHeight / 4);
-			ctx.lineTo(padding + histoWidth, padding + i * histoHeight / 4);
-			ctx.stroke();
-		}
+		ctx.save();
+		ctx.translate(padding, padding);
+		this.area.draw(ctx, histoWidth, histoHeight);
+		ctx.restore();
 
 		ctx.restore();
 	}
-}
-
-function editor(width, height) {
-	return new Editor(width, height).canvas;
 }

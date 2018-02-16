@@ -2,6 +2,10 @@
 	<body>
 		<script src="src/curve_editor.js"></script>
 		<script>
+			function editor(width, height) {
+				return new Editor(width, height).canvas;
+			}
+
 			var dom = editor(350, 350);
 			document.body.appendChild(dom);
 		</script>
