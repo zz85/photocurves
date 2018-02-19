@@ -3,7 +3,10 @@ class GridArea {
 		this.x = x;
 		this.y = y;
 
-		this.children = [new CurveElement(x => x * x)];
+		this.children = [
+			new CurveElement(x => x * x),
+			new BoxElement(100, 100)
+		];
 	}
 
 	draw(ctx, histoWidth, histoHeight) {
@@ -36,6 +39,21 @@ class GridArea {
 	}
 }
 
+class BoxElement {
+	constructor(x, y) {
+		this.x = x;
+		this.y = y;
+	}
+
+	draw(ctx) {
+		const w = 6;
+		ctx.lineWidth = 1;
+		ctx.fillStyle = '#ddd'
+		ctx.strokeStyle = '#fff'
+		ctx.strokeRect(-w/2, -w/2, w, w);
+	}
+}
+
 class CurveElement {
 	constructor(equation) {
 		this.equation = equation || (x => x);
@@ -58,6 +76,81 @@ class CurveElement {
 		ctx.lineWidth = 2;
 		ctx.strokeStyle = '#999';
 		ctx.stroke();
+	}
+}
+
+class MapElement {
+	constructor(width, height) {
+		this.x = 0;
+		this.y = 0;
+		this.width = width;
+		this.height = height;
+	}
+	draw(ctx) {
+		const fn = x => x * x;
+		// ctx.lineWidth = 1;
+		// ctx.strokeStyle = '#ddd';
+		for (let x = 0; x < this.width; x+=10) {
+			ctx.beginPath();
+			ctx.moveTo(x, 0);
+			ctx.lineTo(fn(x / this.width) * this.width, this.height);
+			ctx.stroke();
+		}
+	}
+}
+
+class CanvasElement {
+	constructor(width, height) {
+		this.width = width;
+		this.height = height;
+		const canvas = document.createElement('canvas');
+
+		this.ctx = canvas.getContext('2d');
+		this.canvas = canvas;
+
+		canvas.addEventListener('mousemove', (e) => {
+			// console.log(e.offsetX, e.offsetY);
+		})
+
+		this.children = [
+			new MapElement(width, height)
+		];
+		
+		this.resize();
+		this.draw();
+	}
+
+	resize() {
+		var dpr = window.devicePixelRatio;
+		const { canvas, width, height } = this;
+		canvas.width = dpr * width;
+		canvas.height = dpr * height;
+
+		canvas.style.width = `${width}px`;
+		canvas.style.height = `${height}px`;
+		canvas.style.border = '1px solid #ccc'
+		this.dpr = dpr;
+	}
+
+	draw() {
+		const { ctx, dpr, width, height } = this;
+		ctx.save();
+		ctx.scale(dpr, dpr);
+
+		this.drawChildren(this, ctx, width, height);
+		ctx.restore();
+	}
+
+	drawChildren(el, ctx, ...args) {
+		if (!el.children) return;
+
+		el.children.forEach(child => {
+			ctx.save();
+			ctx.translate(child.x || 0, child.y || 0);
+			child.draw(ctx, ...args);
+			this.drawChildren(child, ctx, ...args);
+			ctx.restore();
+		});
 	}
 }
 

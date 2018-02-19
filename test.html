@@ -2,12 +2,12 @@
 	<body>
 		<script src="src/curve_editor.js"></script>
 		<script>
-			function editor(width, height) {
-				return new Editor(width, height).canvas;
-			}
-
-			var dom = editor(350, 350);
+			const editor = new Editor(380, 380);
+			const dom = editor.canvas;
 			document.body.appendChild(dom);
+
+			const mapper = new CanvasElement(300, 300);
+			document.body.appendChild(mapper.canvas);
 		</script>
 	</body>
 </html>
