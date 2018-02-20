@@ -94,8 +94,8 @@ class MapElement {
 		// ctx.strokeStyle = '#ddd';
 		for (let x = 0; x < this.width; x+=10) {
 			ctx.beginPath();
-			ctx.moveTo(x, 0);
-			ctx.lineTo(fn(x / this.width) * this.width, this.height);
+			ctx.moveTo(x, this.height);
+			ctx.lineTo(fn(x / this.width) * this.width, 0);
 			ctx.stroke();
 		}
 	}
@@ -112,12 +112,13 @@ class CanvasElement {
 
 		canvas.addEventListener('mousemove', (e) => {
 			// console.log(e.offsetX, e.offsetY);
+
 		})
 
 		this.children = children || [];
 		
 		this.resize();
-		this.draw();
+		this._draw();
 	}
 
 	resize() {
@@ -132,7 +133,7 @@ class CanvasElement {
 		this.dpr = dpr;
 	}
 
-	draw() {
+	_draw() {
 		const { ctx, dpr, width, height } = this;
 		ctx.save();
 		ctx.scale(dpr, dpr);
@@ -141,17 +142,24 @@ class CanvasElement {
 		ctx.restore();
 	}
 
-	drawChildren(el, ctx, args) {
+	forEach(el, func) {
+		const ctx = this.ctx;
 		if (!el.children) return;
 
 		el.children.forEach(child => {
 			ctx.save();
 			ctx.translate(child.x || 0, child.y || 0);
-			const new_args = child.draw(ctx, args);
-			if (new_args && args) Object.assign(args, new_args);
-			this.drawChildren(child, ctx, args);
+			func(child);
+			this.forEach(child, func);
 			ctx.restore();
 		});
+	}
+
+	drawChildren(el, ctx, args) {
+		this.forEach(el, (child) => {
+			const new_args = child.draw(ctx, args);
+			if (new_args && args) Object.assign(args, new_args);
+		})
 	}
 }
 
