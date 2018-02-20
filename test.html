@@ -2,11 +2,15 @@
 	<body>
 		<script src="src/curve_editor.js"></script>
 		<script>
-			const editor = new Editor(380, 380);
+			const editor = new CanvasElement(
+				380, 380,
+				new Editor(380, 380)
+			);
 			const dom = editor.canvas;
 			document.body.appendChild(dom);
 
-			const mapper = new CanvasElement(300, 300);
+			const mapper = new CanvasElement(300, 300, 
+				new MapElement(300, 300));
 			document.body.appendChild(mapper.canvas);
 		</script>
 	</body>
