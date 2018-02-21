@@ -53,10 +53,13 @@ class GridArea {
 			new BoxElement(1, 1)
 		]
 
+		this.helper = new BoxElement(0.5, 0.5)
+
 		this.children = [
 			// new CurveElement(x => x * x),
 			new CurveElement(curve),
-			...this.points
+			...this.points,
+			this.helper
 		];
 
 		register(this);
@@ -68,6 +71,15 @@ class GridArea {
 	}
 
 	notify(type, point) {
+		if (type === 'COLOR_DROP') {
+			this.helper.t = point;
+			this.helper.v = curve(point);
+			this.helper.pos();
+			console.log('drop', point, this.helper)
+			notify('POINTS_UPDATED', this.points) 
+			return;
+		}
+
 		if (type === 'REMOVE_POINT') {
 			const i = this.points.indexOf(point);
 			if (i > 0 && i < this.points.length - 1) {
@@ -247,6 +259,11 @@ class MapElement {
 		this.y = 0;
 		this.width = width;
 		this.height = height;
+
+		this.children = [
+			new GradientStrip(0, 0, 10, height),
+			new GradientStrip(width - 10, 0, 10, height),
+		]
 	}
 
 	draw(ctx) {
@@ -276,11 +293,18 @@ class Photo {
 			notify('REDRAW')
 			console.log('load');
 		};
+
+		this.children = [
+			new GradientStrip(50, 50, 50, 50)
+		]
 	}
 
-	mousemove(x, y) {
+	mousemove(x1, y1, x, y) {
+		console.log(x1, y1, x, y);
 		var pixel = this.ctx.getImageData(x, y, 1, 1);
-		console.log(pixel.data);
+		// console.log(pixel.data);
+		const v = pixel.data[0]/255
+		notify('COLOR_DROP', v)
 	}
 
 	isIn() {
@@ -293,6 +317,15 @@ class Photo {
 			console.log('draw')
 			ctx.drawImage(this.img, 0, 0);
 		}
+
+		ctx.fillStyle = 'red';
+		ctx.fillRect(0, 0, 10, 10);
+
+		ctx.fillStyle = 'green';
+		ctx.fillRect(10, 10, 10, 10);
+
+		ctx.fillStyle = 'blue';
+		ctx.fillRect(20, 10, 10, 10);
 	}
 }
 
@@ -321,7 +354,7 @@ class CanvasElement {
 					if (child.isIn(this.ctx, x - cx, y - cy)) {
 						inside = true;
 						if (child.mousemove) {
-							child.mousemove( x - cx, y - cy);
+							child.mousemove(x - cx, y - cy, x * this.dpr, y * this.dpr);
 							// TODO
 						}
 
@@ -425,12 +458,43 @@ class CanvasElement {
 	}
 }
 
+class GradientStrip {
+	constructor(x, y, w, h) {
+		this.resize(w, h, x, y)
+	}
+
+	resize(w, h, x, y) {
+		this.width = w || 10;
+		this.height = h || 100;
+		this.x = x || 0;
+		this.y = y || 0;
+	}
+
+	draw(ctx) {
+		var gradient = ctx.createLinearGradient(0, this.height, 0, 0);
+		gradient.addColorStop(0, '#000');
+		gradient.addColorStop(1, '#fff');
+		ctx.fillStyle = gradient;
+		ctx.beginPath()
+		ctx.rect(0, 0, this.width, this.height);
+		ctx.fill();
+	}
+}
+
 class Editor {
 	constructor(width, height) {
 		this.width = width;
 		this.height = height;
 		this.gridArea = new GridArea(40, 40);
-		this.children = [this.gridArea];
+		this.vstrip = new GradientStrip();
+
+		// padding - stripWidth, padding, stripWidth, histoHeight
+
+		this.children = [
+			this.vstrip,
+			this.gridArea,
+			
+		];
 	}
 
 	draw(ctx) {
@@ -439,22 +503,15 @@ class Editor {
 		ctx.fillRect(0, 0, width, height);
 
 		var padding = 40;
-		var stripWidth =  10;
+		var stripWidth = 10;
 		var histoWidth = width - padding * 2;
 		var histoHeight = height - padding * 2;
 
 		this.gridArea.resize(histoWidth, histoHeight);
+		this.vstrip.resize(stripWidth, histoHeight, padding - stripWidth, padding)
 
 		// draw gradient strip
-		var gradient = ctx.createLinearGradient(0, histoHeight + padding, 0, padding - stripWidth);
-		gradient.addColorStop(0, '#000');
-		gradient.addColorStop(1, '#fff');
-		ctx.fillStyle = gradient;
-		ctx.beginPath()
-		ctx.rect(padding - stripWidth, padding, stripWidth, histoHeight);
-		ctx.fill();
-		// ctx.stroke();
-
+		
 		var gradient = ctx.createLinearGradient(0, padding, histoWidth, 0);
 		gradient.addColorStop(0, '#000');
 		gradient.addColorStop(1, '#fff');

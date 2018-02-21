@@ -21,7 +21,7 @@
 						photo && photo._draw();
 						return
 					}
-					if (type !== 'POINTS_UPDATED') return
+					if (type !== 'POINTS_UPDATED' || !_points) return
 
 					points = _points;
 					xs = points.map(p => p.t)
@@ -52,7 +52,7 @@
 				new MapElement(300, 300));
 
 			photo = new CanvasElement(
-				380, 380,
+				400, 380,
 				new Photo('https://mdn.mozillademos.org/files/5397/rhino.jpg')
 			);
 			
