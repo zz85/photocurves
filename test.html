@@ -11,8 +11,11 @@
 
 			const mapper = new CanvasElement(300, 300,
 				new MapElement(300, 300));
+			
 			register({
 				notify() {
+					// console.log('redraw')
+					editor._draw()
 					mapper._draw()
 				}
 			})

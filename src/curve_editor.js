@@ -22,12 +22,13 @@ class GridArea {
 			new BoxElement(1, 1)
 		]
 
+		// TODO move curve out
 		window.curve = this.curve.bind(this);
 
 		this.children = [
 			// new CurveElement(x => x * x),
 			new CurveElement(curve),
-			...this.points			
+			...this.points
 		];
 
 		register(this);
@@ -60,12 +61,12 @@ class GridArea {
 	}
 
 	dblclick(x, y, a, b) {
-		console.log(x, y, a, b);
 		const box = new BoxElement(a / this.width, 1 - b / this.height);
 		this.children.push(box);
 		this.points.push(box);
 		box.resize(this.width, this.height);
-		this.notify();
+		// this.notify();
+		notify('redraw');
 	}
 
 	resize(width, height) {
@@ -110,7 +111,7 @@ class BoxElement {
 		this.t = t;
 		this.v = v;
 		this.w = 8;
-		
+
 		this.resize(200, 200);
 	}
 
@@ -145,7 +146,7 @@ class BoxElement {
 
 	isIn(ctx, x, y) {
 		var w2 = this.w / 2;
-		if (x >= this.x - w2 && x <= this.x + w2 && y >= this.y - w2 && y <= this.y + w2) {
+		if (Math.abs(x) <= w2 && Math.abs(y) <= w2) {
 			return true;
 		}
 		return false;
@@ -160,7 +161,7 @@ class BoxElement {
 		const mousemove = (e) => {
 			const tx = (e.offsetX - this.downx) + this.ox;
 			const ty = (e.offsetY - this.downy) + this.oy;
-			
+
 			this.t = clamp(tx / this.width, 0, 1);
 			this.v = clamp(1 - (ty / this.height), 0, 1);
 			this.pos();
@@ -221,7 +222,7 @@ class MapElement {
 			// ctx.lineTo(fn(x / this.width) * this.width, this.height);
 			ctx.moveTo(0, this.height - x);
 			ctx.lineTo(this.height, this.height - fn(x / this.width) * this.width);
-			
+
 			ctx.stroke();
 		}
 	}
@@ -247,7 +248,8 @@ class CanvasElement {
 			const x = e.offsetX, y = e.offsetY;
 			let inside = false;
 			this.forIn(this, (child, cx, cy) => {
-				if (child.isIn) {
+				if (child.isIn)
+					{
 					if (child.isIn(this.ctx, x - cx, y - cy)) {
 						inside = true;
 					};
@@ -274,6 +276,7 @@ class CanvasElement {
 
 		canvas.addEventListener('dblclick', (e) => {
 			const x = e.offsetX, y = e.offsetY;
+			// TODO dbl click should remove point
 			this.forIn(this, (child, cx, cy) => {
 				if (child.dblclick) {
 					child.dblclick(x, y, x - cx, y - cy);
@@ -282,7 +285,7 @@ class CanvasElement {
 		})
 
 		this.children = children || [];
-		
+
 		this.resize();
 		this._draw();
 	}
@@ -328,12 +331,12 @@ class CanvasElement {
 		cx = cx || 0;
 		cy = cy || 0;
 		el.children.forEach(child => {
-			func(child, cx, cy);
 			cx += child.x || 0;
 			cy += child.y || 0;
-			
+
+			func(child, cx, cy);
 			this.forIn(child, func, cx, cy);
-			
+
 			// ctx.restore();
 			cx -= child.x || 0;
 			cy -= child.y || 0;
@@ -398,9 +401,9 @@ class Editor {
  * - props passing / referencing
  * - drawing / dirty sections
  * - svg?
- * 
+ *
  * ideas
  * - parrallel histogram
  * - strip bars
- * - 
+ * -
  */
