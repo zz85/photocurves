@@ -16,12 +16,13 @@
 				Events
 					POINTS_MOVING: from Box
 					POINTS_STOPPED: from Box
-					POINTS_UPDATED(points): from Grid
+					POINTS_UPDATED(points): from Grid, redraw
 					REDRAW - trigger rerender (not used)
 			*/
 			register({
-				notify(type) {
-					console.log(`Received event [${type}]`)
+				notify(type, points) {
+					// console.log(`Received event [${type}]`, points)
+					if (type !== 'POINTS_UPDATED') return
 					editor._draw()
 					mapper._draw()
 				}

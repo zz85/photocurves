@@ -65,13 +65,30 @@ class GridArea {
 		register(this);
 	}
 
+	isIn(ctx, x, y) {
+		return true;
+	}
+
 	curve(t) {
 		return linearCurve(t, this.points);
 	}
 
-	notify(type) {
-		if (type !== 'POINTS_MOVING' && type !== 'POINTS_STOPPED') return;
+	notify(type, point) {
+		if (type === 'REMOVE_POINT') {
+			const i = this.points.indexOf(point);
+			if (i > 0 && i < this.points.length - 1) {
+				this.points.splice(i, 1);
+				this.children.splice(this.children.indexOf(point), 1);
+				this.pos();
+			}
+			return;
+		}
 
+		if (type !== 'POINTS_MOVING' && type !== 'POINTS_STOPPED') return;
+		this.pos();
+	}
+
+	pos() {
 		this.points.sort((a, b) => {
 			if (a.t > b.t) return 1;
 			if (a.t < b.t) return -1;
@@ -133,6 +150,11 @@ class BoxElement {
 		this.w = 8;
 
 		this.resize(200, 200);
+	}
+
+	dblclick() {
+		notify('REMOVE_POINT', this);
+		return true
 	}
 
 	pos() {
@@ -297,10 +319,10 @@ class CanvasElement {
 
 		canvas.addEventListener('dblclick', (e) => {
 			const x = e.offsetX, y = e.offsetY;
-			// TODO dbl click should remove point
 			this.forIn(this, (child, cx, cy) => {
-				if (child.dblclick) {
-					child.dblclick(x, y, x - cx, y - cy);
+				if (child.dblclick && child.isIn) {
+					if (child.isIn(this.ctx, x - cx, y - cy))
+						return child.dblclick(x, y, x - cx, y - cy);
 				}
 			})
 		})
@@ -351,12 +373,12 @@ class CanvasElement {
 
 		cx = cx || 0;
 		cy = cy || 0;
-		el.children.forEach(child => {
+		return el.children.some(child => {
 			cx += child.x || 0;
 			cy += child.y || 0;
 
-			func(child, cx, cy);
-			this.forIn(child, func, cx, cy);
+			if (this.forIn(child, func, cx, cy)) return true;
+			if (func(child, cx, cy)) return true;
 
 			// ctx.restore();
 			cx -= child.x || 0;
