@@ -12,9 +12,16 @@
 			const mapper = new CanvasElement(300, 300,
 				new MapElement(300, 300));
 			
+			/**
+				Events
+					POINTS_MOVING: from Box
+					POINTS_STOPPED: from Box
+					POINTS_UPDATED(points): from Grid
+					REDRAW - trigger rerender (not used)
+			*/
 			register({
-				notify() {
-					// console.log('redraw')
+				notify(type) {
+					console.log(`Received event [${type}]`)
 					editor._draw()
 					mapper._draw()
 				}

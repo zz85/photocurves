@@ -1,4 +1,9 @@
 const clamp = (v, min, max) => Math.min(Math.max(min, v), max);
+
+/**
+ * Event / Data management
+ */
+
 const notify = (action, ...params) => {
 	listeners.forEach(listener => {
 		listener.notify && listener.notify(action, ...params);
@@ -9,6 +14,32 @@ const listeners = new Set;
 const register = (target) => {
 	listeners.add(target);
 }
+
+/**
+ * Linear Curve Interpolation
+ */
+
+function linearCurve(t, points) {
+	const find_index = points.findIndex((point) => {
+		return point.t > t;
+	});
+
+	const last_point = find_index > -1 ?
+		find_index < 1 ? 1 :
+			find_index : points.length - 1;
+
+	const first = points[last_point - 1];
+	const last = points[last_point];
+
+	if (t < first.t) { return first.v };
+	if (t > last.t) { return last.v };
+
+	return (t - first.t) / (last.t - first.t) * (last.v - first.v) + first.v;
+}
+
+/**
+ * Graphic classes
+ */
 
 class GridArea {
 	constructor(x, y) {
@@ -35,29 +66,19 @@ class GridArea {
 	}
 
 	curve(t) {
-		const find_index = this.points.findIndex((point) => {
-			return point.t > t;
-		});
-
-		const last_point = find_index > -1 ?
-			find_index < 1 ? 1 :
-				find_index : this.points.length - 1;
-
-		const first = this.points[last_point - 1];
-		const last = this.points[last_point];
-
-		if (t < first.t) { return first.v };
-		if (t > last.t) { return last.v };
-
-		return (t - first.t) / (last.t - first.t) * (last.v - first.v) + first.v;
+		return linearCurve(t, this.points);
 	}
 
-	notify() {
+	notify(type) {
+		if (type !== 'POINTS_MOVING' && type !== 'POINTS_STOPPED') return;
+
 		this.points.sort((a, b) => {
 			if (a.t > b.t) return 1;
 			if (a.t < b.t) return -1;
 			return 0;
 		});
+
+		notify('POINTS_UPDATED', this.points);
 	}
 
 	dblclick(x, y, a, b) {
@@ -65,8 +86,7 @@ class GridArea {
 		this.children.push(box);
 		this.points.push(box);
 		box.resize(this.width, this.height);
-		// this.notify();
-		notify('redraw');
+		notify('POINTS_MOVING');
 	}
 
 	resize(width, height) {
@@ -165,12 +185,13 @@ class BoxElement {
 			this.t = clamp(tx / this.width, 0, 1);
 			this.v = clamp(1 - (ty / this.height), 0, 1);
 			this.pos();
+			notify('POINTS_MOVING');
 		}
 
 		const mouseup = () => {
 			document.body.removeEventListener('mousemove', mousemove)
 			document.body.removeEventListener('mouseup', mouseup)
-			notify('changed');
+			notify('POINTS_STOPPED');
 		}
 
 		document.body.addEventListener('mousemove', mousemove)
