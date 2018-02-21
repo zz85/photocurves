@@ -265,6 +265,37 @@ class MapElement {
 	}
 }
 
+class Photo {
+	constructor(src) {
+		var img = new Image();
+		img.src = src;
+		document.body.appendChild(img)
+		img.onload = function() {
+			// img.style.display = 'none';
+			this.img = img
+			notify('REDRAW')
+			console.log('load');
+		};
+	}
+
+	mousemove(x, y) {
+		var pixel = this.ctx.getImageData(x, y, 1, 1);
+		console.log(pixel.data);
+	}
+
+	isIn() {
+		return true;	
+	}
+
+	draw(ctx) {
+		this.ctx = ctx;
+		if (this.img) {
+			console.log('draw')
+			ctx.drawImage(this.img, 0, 0);
+		}
+	}
+}
+
 class CanvasElement {
 	constructor(width, height, ...children) {
 		this.width = width;
@@ -290,6 +321,7 @@ class CanvasElement {
 					if (child.isIn(this.ctx, x - cx, y - cy)) {
 						inside = true;
 						if (child.mousemove) {
+							child.mousemove( x - cx, y - cy);
 							// TODO
 						}
 

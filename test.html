@@ -11,11 +11,16 @@
 					REDRAW - trigger rerender (not used)
 			*/
 			let points;
-			let editor, mapper;
+			let editor, mapper, photo;
 			let ys = [], xs = [], ks = [];
 			register({
 				notify(type, _points) {
 					// console.log(`Received event [${type}]`, points)
+					if (type === 'REDRAW') {
+						console.log('zzzz')
+						photo && photo._draw();
+						return
+					}
 					if (type !== 'POINTS_UPDATED') return
 
 					points = _points;
@@ -42,13 +47,19 @@
 				380, 380,
 				new Editor(380, 380)
 			);
-			const dom = editor.canvas;
-			document.body.appendChild(dom);
 
 			mapper = new CanvasElement(300, 300,
 				new MapElement(300, 300));
 
+			photo = new CanvasElement(
+				380, 380,
+				new Photo('https://mdn.mozillademos.org/files/5397/rhino.jpg')
+			);
+			
+			const dom = editor.canvas;
+			document.body.appendChild(dom);
 			document.body.appendChild(mapper.canvas);
+			document.body.appendChild(photo.canvas);
 		</script>
 	</body>
 </html>
