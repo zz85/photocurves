@@ -2,11 +2,20 @@ class GridArea {
 	constructor(x, y) {
 		this.x = x;
 		this.y = y;
+		this.width = 100;
+		this.height = 100;
 
 		this.children = [
 			new CurveElement(x => x * x),
-			new BoxElement(100, 100)
+			new BoxElement(0, 0),
+			new BoxElement(1, 1),
 		];
+	}
+
+	resize(width, height) {
+		this.width = width;
+		this.height = height;
+		this.children.forEach(child => child.resize && child.resize(width, height));
 	}
 
 	draw(ctx) {
@@ -40,11 +49,26 @@ class GridArea {
 	}
 }
 
+const clamp = (v, min, max) => Math.min(Math.max(min, v), max);
+
 class BoxElement {
-	constructor(x, y) {
-		this.x = x;
-		this.y = y;
+	constructor(t, v) {
+		this.t = t;
+		this.v = v;
 		this.w = 8;
+		
+		this.resize(200, 200);
+	}
+
+	pos() {
+		this.x = this.t * this.width;
+		this.y = (1 - this.v) * this.height;
+	}
+
+	resize(width, height) {
+		this.width = width;
+		this.height = height;
+		this.pos()
 	}
 
 	draw(ctx) {
@@ -74,16 +98,18 @@ class BoxElement {
 	}
 
 	mousedown(x, y) {
-		this.down = true;
-
 		this.downx = x;
 		this.downy = y;
 		this.ox = this.x;
 		this.oy = this.y;
 
 		const mousemove = (e) => {
-			this.x = (e.offsetX - this.downx) + this.ox;
-			this.y = (e.offsetY - this.downy) + this.oy;
+			const tx = (e.offsetX - this.downx) + this.ox;
+			const ty = (e.offsetY - this.downy) + this.oy;
+			
+			this.t = clamp(tx / this.width, 0, 1);
+			this.v = clamp(1 - (ty / this.height), 0, 1);
+			this.pos();
 		}
 
 		const mouseup = () => {
@@ -93,12 +119,8 @@ class BoxElement {
 
 		document.body.addEventListener('mousemove', mousemove)
 		document.body.addEventListener('mouseup', mouseup)
+		document.body.addEventListener('mousecancel', mouseup)
 	}
-
-	// isIn(ctx, x, y) {
-	// 	this.paint(ctx);
-	// 	return ctx.isPointInPath(x, y)
-	// }
 }
 
 class CurveElement {
@@ -276,8 +298,7 @@ class Editor {
 		var histoWidth = width - padding * 2;
 		var histoHeight = height - padding * 2;
 
-		this.gridArea.width = histoWidth;
-		this.gridArea.height = histoHeight;
+		this.gridArea.resize(histoWidth, histoHeight);
 
 		// draw gradient strip
 		var gradient = ctx.createLinearGradient(0, histoHeight + padding, 0, padding - stripWidth);
