@@ -12,15 +12,18 @@
 			*/
 			let points;
 			let editor, mapper;
-			let ys = [], xs = [];
+			let ys = [], xs = [], ks = [];
 			register({
 				notify(type, _points) {
-					console.log(`Received event [${type}]`, points)
+					// console.log(`Received event [${type}]`, points)
 					if (type !== 'POINTS_UPDATED') return
 
 					points = _points;
 					xs = points.map(p => p.t)
 					ys = points.map(p => p.v)
+					ks = points.concat();
+
+					CSPL.getNaturalKs(xs, ys, ks);
 					
 					editor && editor._draw()
 					mapper && mapper._draw()
@@ -31,7 +34,8 @@
 
 			// GLOBAL curve
 			const curve = (t) =>
-				clamp(spline(t, xs, ys), 0, 1)
+				clamp(CSPL.evalSpline(t, xs, ys, ks), 0, 1)
+				// CSPL.evalSpline(t, xs, ys, ks)
 				// linearCurve(t, points);
 
 			editor = new CanvasElement(
