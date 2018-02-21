@@ -9,8 +9,13 @@
 			const dom = editor.canvas;
 			document.body.appendChild(dom);
 
-			const mapper = new CanvasElement(300, 300, 
+			const mapper = new CanvasElement(300, 300,
 				new MapElement(300, 300));
+			register({
+				notify() {
+					mapper._draw()
+				}
+			})
 			document.body.appendChild(mapper.canvas);
 		</script>
 	</body>

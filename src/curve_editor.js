@@ -1,3 +1,15 @@
+const clamp = (v, min, max) => Math.min(Math.max(min, v), max);
+const notify = (action, ...params) => {
+	listeners.forEach(listener => {
+		listener.notify && listener.notify(action, ...params);
+	})
+}
+const listeners = new Set;
+
+const register = (target) => {
+	listeners.add(target);
+}
+
 class GridArea {
 	constructor(x, y) {
 		this.x = x;
@@ -5,11 +17,55 @@ class GridArea {
 		this.width = 100;
 		this.height = 100;
 
-		this.children = [
-			new CurveElement(x => x * x),
+		this.points = [
 			new BoxElement(0, 0),
-			new BoxElement(1, 1),
+			new BoxElement(1, 1)
+		]
+
+		window.curve = this.curve.bind(this);
+
+		this.children = [
+			// new CurveElement(x => x * x),
+			new CurveElement(curve),
+			...this.points			
 		];
+
+		register(this);
+	}
+
+	curve(t) {
+		const find_index = this.points.findIndex((point) => {
+			return point.t > t;
+		});
+
+		const last_point = find_index > -1 ?
+			find_index < 1 ? 1 :
+				find_index : this.points.length - 1;
+
+		const first = this.points[last_point - 1];
+		const last = this.points[last_point];
+
+		if (t < first.t) { return first.v };
+		if (t > last.t) { return last.v };
+
+		return (t - first.t) / (last.t - first.t) * (last.v - first.v) + first.v;
+	}
+
+	notify() {
+		this.points.sort((a, b) => {
+			if (a.t > b.t) return 1;
+			if (a.t < b.t) return -1;
+			return 0;
+		});
+	}
+
+	dblclick(x, y, a, b) {
+		console.log(x, y, a, b);
+		const box = new BoxElement(a / this.width, 1 - b / this.height);
+		this.children.push(box);
+		this.points.push(box);
+		box.resize(this.width, this.height);
+		this.notify();
 	}
 
 	resize(width, height) {
@@ -48,8 +104,6 @@ class GridArea {
 		}
 	}
 }
-
-const clamp = (v, min, max) => Math.min(Math.max(min, v), max);
 
 class BoxElement {
 	constructor(t, v) {
@@ -115,6 +169,7 @@ class BoxElement {
 		const mouseup = () => {
 			document.body.removeEventListener('mousemove', mousemove)
 			document.body.removeEventListener('mouseup', mouseup)
+			notify('changed');
 		}
 
 		document.body.addEventListener('mousemove', mousemove)
@@ -155,14 +210,18 @@ class MapElement {
 		this.width = width;
 		this.height = height;
 	}
+
 	draw(ctx) {
-		const fn = x => x * x;
+		const fn = window.curve || (x => x * x);
 		// ctx.lineWidth = 1;
 		// ctx.strokeStyle = '#ddd';
 		for (let x = 0; x < this.width; x+=10) {
 			ctx.beginPath();
-			ctx.moveTo(x, this.height);
-			ctx.lineTo(fn(x / this.width) * this.width, 0);
+			// ctx.moveTo(x, 0);
+			// ctx.lineTo(fn(x / this.width) * this.width, this.height);
+			ctx.moveTo(0, this.height - x);
+			ctx.lineTo(this.height, this.height - fn(x / this.width) * this.width);
+			
 			ctx.stroke();
 		}
 	}
@@ -178,9 +237,9 @@ class CanvasElement {
 		this.canvas = canvas;
 
 		canvas.addEventListener('mousemove', (e) => {
-			if (this.moo) return
-			this.moo = setTimeout(() => {
-				this.moo = null;
+			if (this.dueRepaint) return
+			this.dueRepaint = requestAnimationFrame(() => {
+				this.dueRepaint = null;
 				this._draw();
 			});
 
@@ -209,6 +268,15 @@ class CanvasElement {
 					if (child.isIn(this.ctx, x - cx, y - cy)) {
 						child.mousedown && child.mousedown(x, y, x - cx, y - cy);
 					};
+				}
+			})
+		})
+
+		canvas.addEventListener('dblclick', (e) => {
+			const x = e.offsetX, y = e.offsetY;
+			this.forIn(this, (child, cx, cy) => {
+				if (child.dblclick) {
+					child.dblclick(x, y, x - cx, y - cy);
 				}
 			})
 		})
@@ -330,4 +398,9 @@ class Editor {
  * - props passing / referencing
  * - drawing / dirty sections
  * - svg?
+ * 
+ * ideas
+ * - parrallel histogram
+ * - strip bars
+ * - 
  */
