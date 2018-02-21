@@ -1,32 +1,49 @@
 <html>
 	<body>
 		<script src="src/curve_editor.js"></script>
+		<script src="src/spline.js"></script>
 		<script>
-			const editor = new CanvasElement(
+			/**
+				Events
+					POINTS_MOVING: from Box
+					POINTS_STOPPED: from Box
+					POINTS_UPDATED(points): from Grid, from Box(removal) to redraw
+					REDRAW - trigger rerender (not used)
+			*/
+			let points;
+			let editor, mapper;
+			let ys = [], xs = [];
+			register({
+				notify(type, _points) {
+					console.log(`Received event [${type}]`, points)
+					if (type !== 'POINTS_UPDATED') return
+
+					points = _points;
+					xs = points.map(p => p.t)
+					ys = points.map(p => p.v)
+					
+					editor && editor._draw()
+					mapper && mapper._draw()
+
+					// TODO save / export points
+				}
+			})
+
+			// GLOBAL curve
+			const curve = (t) =>
+				clamp(spline(t, xs, ys), 0, 1)
+				// linearCurve(t, points);
+
+			editor = new CanvasElement(
 				380, 380,
 				new Editor(380, 380)
 			);
 			const dom = editor.canvas;
 			document.body.appendChild(dom);
 
-			const mapper = new CanvasElement(300, 300,
+			mapper = new CanvasElement(300, 300,
 				new MapElement(300, 300));
-			
-			/**
-				Events
-					POINTS_MOVING: from Box
-					POINTS_STOPPED: from Box
-					POINTS_UPDATED(points): from Grid, redraw
-					REDRAW - trigger rerender (not used)
-			*/
-			register({
-				notify(type, points) {
-					// console.log(`Received event [${type}]`, points)
-					if (type !== 'POINTS_UPDATED') return
-					editor._draw()
-					mapper._draw()
-				}
-			})
+
 			document.body.appendChild(mapper.canvas);
 		</script>
 	</body>

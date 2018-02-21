@@ -53,9 +53,6 @@ class GridArea {
 			new BoxElement(1, 1)
 		]
 
-		// TODO move curve out
-		window.curve = this.curve.bind(this);
-
 		this.children = [
 			// new CurveElement(x => x * x),
 			new CurveElement(curve),
@@ -63,14 +60,11 @@ class GridArea {
 		];
 
 		register(this);
+		notify('POINTS_UPDATED', this.points);
 	}
 
 	isIn(ctx, x, y) {
 		return true;
-	}
-
-	curve(t) {
-		return linearCurve(t, this.points);
 	}
 
 	notify(type, point) {
@@ -256,7 +250,7 @@ class MapElement {
 	}
 
 	draw(ctx) {
-		const fn = window.curve || (x => x * x);
+		const fn = curve || (x => x * x);
 		// ctx.lineWidth = 1;
 		// ctx.strokeStyle = '#ddd';
 		for (let x = 0; x < this.width; x+=10) {
@@ -295,6 +289,11 @@ class CanvasElement {
 					{
 					if (child.isIn(this.ctx, x - cx, y - cy)) {
 						inside = true;
+						if (child.mousemove) {
+							// TODO
+						}
+
+						// mouseout
 					};
 				}
 			})
@@ -448,5 +447,6 @@ class Editor {
  * ideas
  * - parrallel histogram
  * - strip bars
- * -
+ * - more grids
+ * - cursor (crosshair, move? vs pointer, default)
  */
