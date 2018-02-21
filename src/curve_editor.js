@@ -44,15 +44,39 @@ class BoxElement {
 	constructor(x, y) {
 		this.x = x;
 		this.y = y;
+		this.w = 8;
 	}
 
 	draw(ctx) {
-		const w = 6;
+		this.path(ctx);
+		this.paint(ctx);
+	}
+
+	path(ctx) {
+		const w = this.w;
+		ctx.beginPath()
+		ctx.rect(-w/2, -w/2, w, w);
+	}
+
+	paint(ctx) {
 		ctx.lineWidth = 1;
 		ctx.fillStyle = '#ddd'
 		ctx.strokeStyle = '#fff'
-		ctx.strokeRect(-w/2, -w/2, w, w);
+		ctx.stroke();
 	}
+
+	isIn(ctx, x, y) {
+		var w2 = this.w / 2;
+		if (x >= this.x - w2 && x <= this.x + w2 && y >= this.y - w2 && y <= this.y + w2) {
+			return true;
+		}
+		return false;
+	}
+
+	// isIn(ctx, x, y) {
+	// 	this.paint(ctx);
+	// 	return ctx.isPointInPath(x, y)
+	// }
 }
 
 class CurveElement {
@@ -112,7 +136,14 @@ class CanvasElement {
 
 		canvas.addEventListener('mousemove', (e) => {
 			// console.log(e.offsetX, e.offsetY);
-
+			const x = e.offsetX, y = e.offsetY;
+			this.forIn(this, (child, cx, cy) => {
+				if (child.isIn) {
+					if (child.isIn(this.ctx, x - cx, y - cy)) {
+						console.log('in', cx, cy, x, y)
+					};
+				}
+			})
 		})
 
 		this.children = children || [];
@@ -152,6 +183,24 @@ class CanvasElement {
 			func(child);
 			this.forEach(child, func);
 			ctx.restore();
+		});
+	}
+
+	forIn(el, func, cx, cy) {
+		if (!el.children) return;
+
+		cx = cx || 0;
+		cy = cy || 0;
+		el.children.forEach(child => {
+			func(child, cx, cy);
+			cx += child.x || 0;
+			cy += child.y || 0;
+			
+			this.forIn(child, func, cx, cy);
+			
+			// ctx.restore();
+			cx -= child.x || 0;
+			cy -= child.y || 0;
 		});
 	}
 
