@@ -73,6 +73,28 @@ class BoxElement {
 		return false;
 	}
 
+	mousedown(x, y) {
+		this.down = true;
+
+		this.downx = x;
+		this.downy = y;
+		this.ox = this.x;
+		this.oy = this.y;
+
+		const mousemove = (e) => {
+			this.x = (e.offsetX - this.downx) + this.ox;
+			this.y = (e.offsetY - this.downy) + this.oy;
+		}
+
+		const mouseup = () => {
+			document.body.removeEventListener('mousemove', mousemove)
+			document.body.removeEventListener('mouseup', mouseup)
+		}
+
+		document.body.addEventListener('mousemove', mousemove)
+		document.body.addEventListener('mouseup', mouseup)
+	}
+
 	// isIn(ctx, x, y) {
 	// 	this.paint(ctx);
 	// 	return ctx.isPointInPath(x, y)
@@ -85,7 +107,6 @@ class CurveElement {
 	}
 
 	draw(ctx, { width, height }) {
-		console.log(width, height);
 		const eq = this.equation;
 
 		let t = 0;
@@ -135,12 +156,36 @@ class CanvasElement {
 		this.canvas = canvas;
 
 		canvas.addEventListener('mousemove', (e) => {
+			if (this.moo) return
+			this.moo = setTimeout(() => {
+				this.moo = null;
+				this._draw();
+			});
+
 			// console.log(e.offsetX, e.offsetY);
+			const x = e.offsetX, y = e.offsetY;
+			let inside = false;
+			this.forIn(this, (child, cx, cy) => {
+				if (child.isIn) {
+					if (child.isIn(this.ctx, x - cx, y - cy)) {
+						inside = true;
+					};
+				}
+			})
+
+			if (inside) {
+				document.body.style.cursor = 'pointer';
+			} else {
+				document.body.style.cursor = 'default';
+			}
+		})
+
+		canvas.addEventListener('mousedown', (e) => {
 			const x = e.offsetX, y = e.offsetY;
 			this.forIn(this, (child, cx, cy) => {
 				if (child.isIn) {
 					if (child.isIn(this.ctx, x - cx, y - cy)) {
-						console.log('in', cx, cy, x, y)
+						child.mousedown && child.mousedown(x, y, x - cx, y - cy);
 					};
 				}
 			})
@@ -168,6 +213,7 @@ class CanvasElement {
 		const { ctx, dpr, width, height } = this;
 		ctx.save();
 		ctx.scale(dpr, dpr);
+		ctx.clearRect(0, 0, width, height);
 
 		this.drawChildren(this, ctx, { width, height });
 		ctx.restore();
@@ -257,3 +303,10 @@ class Editor {
 		}
 	}
 }
+
+/**
+ * qns
+ * - props passing / referencing
+ * - drawing / dirty sections
+ * - svg?
+ */
