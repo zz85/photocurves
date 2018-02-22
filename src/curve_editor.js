@@ -302,14 +302,18 @@ const imageToData = (src, callback) => {
 
 class Photo {
 	constructor(src) {
-		imageToData(src, (data) => {
-			// console.log('done', data);
-			this.imageData = data;
-			notify('REDRAW')
-		})
 		this.children = [
 			new GradientStrip(50, 50, 50, 50)
 		]
+
+		this.load(src)
+	}
+
+	load(src) {
+		imageToData(src, (data) => {
+			this.imageData = data;
+			notify('REDRAW')
+		})
 	}
 
 	mousemove(x1, y1, x, y) {
@@ -577,3 +581,6 @@ class Editor {
 
 // https://webgl2fundamentals.org/webgl/lessons/webgl-image-processing.html
 // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas
+// https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
+// https://github.com/NVIDIA/FastPhotoStyle
+// https://github.com/lengstrom/fast-style-transfer

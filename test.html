@@ -58,17 +58,20 @@
 				// 'img/rhino.jpg'
 				// 'img/climbing.jpg'
 
+			photo_holder = new Photo(img)
+
 			photo = new CanvasElement(
 				700, 880,
-				new Photo(
-					img
-				)
+				photo_holder
 			);
-			
+
 			const dom = editor.canvas;
 			document.body.appendChild(dom);
 			document.body.appendChild(mapper.canvas);
 			document.body.appendChild(photo.canvas);
+
+
+
 		</script>
 	</body>
 </html>
