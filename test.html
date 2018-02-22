@@ -2,6 +2,7 @@
 	<body>
 		<script src="src/curve_editor.js"></script>
 		<script src="src/spline.js"></script>
+		<script src="src/image_opener.js"></script>
 		<script>
 			/**
 				Events
@@ -65,10 +66,17 @@
 				photo_holder
 			);
 
+			const open_input = opener((result) => {
+				photo_holder.load(result);
+			});
+
+			document.body.appendChild(open_input);
+
 			const dom = editor.canvas;
 			document.body.appendChild(dom);
 			document.body.appendChild(mapper.canvas);
 			document.body.appendChild(photo.canvas);
+			
 
 
 
