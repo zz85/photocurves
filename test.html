@@ -32,6 +32,7 @@
 					
 					editor && editor._draw()
 					mapper && mapper._draw()
+					photo && photo._draw();
 
 					// TODO save / export points
 				}
@@ -52,9 +53,14 @@
 				new MapElement(300, 300));
 
 			photo = new CanvasElement(
-				400, 380,
-				new Photo('https://mdn.mozillademos.org/files/5397/rhino.jpg')
+				700, 880,
+				new Photo(
+					'img/Lenna.png'
+					// 'img/rhino.jpg'
+					// 'img/climbing.jpg'
+				)
 			);
+			// https://mdn.mozillademos.org/files/5397/rhino.jpg
 			
 			const dom = editor.canvas;
 			document.body.appendChild(dom);

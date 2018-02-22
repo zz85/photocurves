@@ -287,11 +287,10 @@ class Photo {
 		var img = new Image();
 		img.src = src;
 		document.body.appendChild(img)
-		img.onload = function() {
-			// img.style.display = 'none';
+		img.onload = () => {
+			img.style.display = 'none';
 			this.img = img
 			notify('REDRAW')
-			console.log('load');
 		};
 
 		this.children = [
@@ -308,7 +307,7 @@ class Photo {
 	}
 
 	isIn() {
-		return true;	
+		return true;
 	}
 
 	draw(ctx) {
@@ -316,6 +315,17 @@ class Photo {
 		if (this.img) {
 			console.log('draw')
 			ctx.drawImage(this.img, 0, 0);
+			const imageData = ctx.getImageData(0, 0, this.img.width * 2, this.img.height * 2);
+
+			const data = imageData.data;
+			for (let i = 0; i < data.length; i++) {
+				if (i % 4 === 3) continue;
+				
+				const v = data[i] / 255;
+				data[i] = curve(v) * 255 | 0;
+			}
+
+			ctx.putImageData(imageData, 0, 0);
 		}
 
 		ctx.fillStyle = 'red';
