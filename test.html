@@ -52,15 +52,18 @@
 			mapper = new CanvasElement(300, 300,
 				new MapElement(300, 300));
 
+			const img = 
+				'img/Lenna.png'
+				// 'https://mdn.mozillademos.org/files/5397/rhino.jpg'
+				// 'img/rhino.jpg'
+				// 'img/climbing.jpg'
+
 			photo = new CanvasElement(
 				700, 880,
 				new Photo(
-					'img/Lenna.png'
-					// 'img/rhino.jpg'
-					// 'img/climbing.jpg'
+					img
 				)
 			);
-			// https://mdn.mozillademos.org/files/5397/rhino.jpg
 			
 			const dom = editor.canvas;
 			document.body.appendChild(dom);

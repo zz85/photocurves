@@ -59,7 +59,7 @@ class GridArea {
 			// new CurveElement(x => x * x),
 			new CurveElement(curve),
 			...this.points,
-			this.helper
+			// this.helper
 		];
 
 		register(this);
@@ -75,7 +75,6 @@ class GridArea {
 			this.helper.t = point;
 			this.helper.v = curve(point);
 			this.helper.pos();
-			console.log('drop', point, this.helper)
 			notify('POINTS_UPDATED', this.points) 
 			return;
 		}
@@ -282,26 +281,39 @@ class MapElement {
 	}
 }
 
+const imageToData = (src, callback) => {
+	const img = new Image();
+	img.src = src;
+	// document.body.appendChild(img)
+	img.onload = () => {
+		img.style.display = 'none';
+		console.log('loaded', img.width, img.height);
+
+		const { width, height } = img;
+		const canvas = document.createElement('canvas');
+		const ctx = canvas.getContext('2d');
+		canvas.width = width;
+		canvas.height = height;
+		ctx.drawImage(img, 0, 0);
+		const data = ctx.getImageData(0, 0, width, height);
+		callback && callback(data);
+	};
+}
+
 class Photo {
 	constructor(src) {
-		var img = new Image();
-		img.src = src;
-		document.body.appendChild(img)
-		img.onload = () => {
-			img.style.display = 'none';
-			this.img = img
+		imageToData(src, (data) => {
+			// console.log('done', data);
+			this.imageData = data;
 			notify('REDRAW')
-		};
-
+		})
 		this.children = [
 			new GradientStrip(50, 50, 50, 50)
 		]
 	}
 
 	mousemove(x1, y1, x, y) {
-		console.log(x1, y1, x, y);
 		var pixel = this.ctx.getImageData(x, y, 1, 1);
-		// console.log(pixel.data);
 		const v = pixel.data[0]/255
 		notify('COLOR_DROP', v)
 	}
@@ -312,11 +324,15 @@ class Photo {
 
 	draw(ctx) {
 		this.ctx = ctx;
-		if (this.img) {
-			console.log('draw')
-			ctx.drawImage(this.img, 0, 0);
-			const imageData = ctx.getImageData(0, 0, this.img.width * 2, this.img.height * 2);
 
+		if (this.imageData) {
+			// copy data
+			const imageData = new ImageData(
+				new Uint8ClampedArray(this.imageData.data),
+				this.imageData.width,
+				this.imageData.height
+			  )
+			
 			const data = imageData.data;
 			for (let i = 0; i < data.length; i++) {
 				if (i % 4 === 3) continue;
@@ -548,4 +564,16 @@ class Editor {
  * - strip bars
  * - more grids
  * - cursor (crosshair, move? vs pointer, default)
+ * 
+ * done
+ * - curve editor
+ * - value map visualizer
+ * - 
+ * 
+ * todo
+ * - image opener
+ * - webgl2 processor
  */
+
+// https://webgl2fundamentals.org/webgl/lessons/webgl-image-processing.html
+// https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas
