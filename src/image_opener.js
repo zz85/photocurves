@@ -53,9 +53,9 @@ function handle_drop(target, callback) {
     }
 
     const handleDragOver = (e) => {
+        e.dataTransfer.dropEffect = 'copy';
         e.stopPropagation();
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
     }
 
     function stopDefault(e) {
@@ -70,9 +70,6 @@ function handle_drop(target, callback) {
         var files = e.dataTransfer.files;
         if (files.length) {
             read_file(files[0], callback);
-        } else {
-            // debugger;
-            // TODO support copypaste/clipboard drag in
         }
     }
 

@@ -274,8 +274,19 @@ class MapElement {
 			ctx.beginPath();
 			// ctx.moveTo(x, 0);
 			// ctx.lineTo(fn(x / this.width) * this.width, this.height);
-			ctx.moveTo(0, this.height - i);
-			ctx.lineTo(this.width, this.height - fn(t) * this.height);
+
+			const sx = 0;
+			const sy = this.height - i;
+			const tx = this.width;
+			const ty = this.height - fn(t) * this.height;
+			ctx.moveTo(sx, sy);
+			// ctx.lineTo(tx, ty);
+
+			ctx.bezierCurveTo(
+				tx / 2, sy,
+				tx / 2, ty,
+				tx, ty
+			)
 
 			ctx.stroke();
 		}
@@ -285,7 +296,7 @@ class MapElement {
 const imageToData = (src, callback) => {
 	const img = new Image();
 	img.src = src;
-	// document.body.appendChild(img)
+
 	img.onload = () => {
 		img.style.display = 'none';
 		console.log('loaded', img.width, img.height);
@@ -303,10 +314,6 @@ const imageToData = (src, callback) => {
 
 class Photo {
 	constructor(src) {
-		this.children = [
-			new GradientStrip(50, 50, 50, 50)
-		]
-
 		this.load(src)
 	}
 
@@ -319,7 +326,7 @@ class Photo {
 
 	mousemove(x1, y1, x, y) {
 		var pixel = this.ctx.getImageData(x, y, 1, 1);
-		const v = pixel.data[0]/255
+		const v = pixel.data[0] / 255
 		notify('COLOR_DROP', v)
 	}
 
@@ -336,7 +343,7 @@ class Photo {
 				new Uint8ClampedArray(this.imageData.data),
 				this.imageData.width,
 				this.imageData.height
-			  )
+			)
 			
 			const data = imageData.data;
 			for (let i = 0; i < data.length; i++) {
@@ -348,17 +355,21 @@ class Photo {
 
 			ctx.putImageData(imageData, 0, 0);
 		}
-
-		ctx.fillStyle = 'red';
-		ctx.fillRect(0, 0, 10, 10);
-
-		ctx.fillStyle = 'green';
-		ctx.fillRect(10, 10, 10, 10);
-
-		ctx.fillStyle = 'blue';
-		ctx.fillRect(20, 10, 10, 10);
 	}
 }
+
+// TODO
+// Strip tests
+/*
+	ctx.fillStyle = 'red';
+	ctx.fillRect(0, 0, 10, 10);
+
+	ctx.fillStyle = 'green';
+	ctx.fillRect(10, 10, 10, 10);
+
+	ctx.fillStyle = 'blue';
+ctx.fillRect(20, 10, 10, 10);
+*/
 
 class CanvasElement {
 	constructor(width, height, ...children) {
@@ -524,7 +535,6 @@ class Editor {
 		this.children = [
 			this.vstrip,
 			this.gridArea,
-			
 		];
 	}
 
@@ -573,11 +583,15 @@ class Editor {
  * done
  * - curve editor
  * - value map visualizer
- * - 
+ * - image / file opener
  * 
  * todo
- * - image opener
  * - webgl2 processor
+ * - histogram
+ 
+ * - rgb channels 
+ * - before after mapping
+ * - 
  */
 
 // https://webgl2fundamentals.org/webgl/lessons/webgl-image-processing.html
@@ -585,3 +599,4 @@ class Editor {
 // https://developer.mozilla.org/en-US/docs/Web/API/FileReader/readAsDataURL
 // https://github.com/NVIDIA/FastPhotoStyle
 // https://github.com/lengstrom/fast-style-transfer
+// https://github.com/blueimp/JavaScript-Load-Image
