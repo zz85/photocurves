@@ -31,7 +31,7 @@ function add_opener(callback) {
     }
 
     handle_drop(document.body, callback)
-    document.body.appendChild(button);
+    return button;
 }
 
 function handle_drop(target, callback) {

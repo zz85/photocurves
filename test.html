@@ -75,14 +75,28 @@
 				photo_holder.load(result);
 			});
 
-			add_opener(photo_holder.load.bind(photo_holder))
+			const button = add_opener(photo_holder.load.bind(photo_holder))
 			// handle_drop(document.body, photo_holder.load.bind(photo_holder))
 			// document.body.appendChild(open_input);
 
-			const dom = editor.canvas;
-			document.body.appendChild(dom);
-			document.body.appendChild(mapper.canvas);
-			document.body.appendChild(photo.canvas);
+			const dom = (children) => {
+				children.forEach(c => {
+					if (typeof c === 'string') {
+						c = document.createElement(c);
+					}
+					document.body.appendChild(c);
+				})
+			};
+
+			dom(
+				[
+					button,
+					'br',
+					editor.canvas,
+					mapper.canvas,
+					photo.canvas
+				]
+			)
 		</script>
 	</body>
 </html>
