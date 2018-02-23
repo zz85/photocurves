@@ -269,12 +269,13 @@ class MapElement {
 		const fn = curve || (x => x * x);
 		// ctx.lineWidth = 1;
 		// ctx.strokeStyle = '#ddd';
-		for (let x = 0; x < this.width; x+=10) {
+		for (let i = 0; i < this.height; i+=10) {
+			const t = i / this.height;
 			ctx.beginPath();
 			// ctx.moveTo(x, 0);
 			// ctx.lineTo(fn(x / this.width) * this.width, this.height);
-			ctx.moveTo(0, this.height - x);
-			ctx.lineTo(this.height, this.height - fn(x / this.width) * this.width);
+			ctx.moveTo(0, this.height - i);
+			ctx.lineTo(this.width, this.height - fn(t) * this.height);
 
 			ctx.stroke();
 		}

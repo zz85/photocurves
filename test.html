@@ -40,18 +40,23 @@
 			})
 
 			// GLOBAL curve
-			const curve = (t) =>
-				clamp(CSPL.evalSpline(t, xs, ys, ks), 0, 1)
+			const curve = (t) => {
+				if (t <= points[0].t) return points[0].v;
+				if (t >= points[points.length-1].t) return points[points.length-1].v;
+
+				return clamp(CSPL.evalSpline(t, xs, ys, ks), 0, 1)
 				// CSPL.evalSpline(t, xs, ys, ks)
 				// linearCurve(t, points);
 
+			}
+				
 			editor = new CanvasElement(
 				380, 380,
 				new Editor(380, 380)
 			);
 
-			mapper = new CanvasElement(300, 300,
-				new MapElement(300, 300));
+			mapper = new CanvasElement(100, 300,
+				new MapElement(100, 300));
 
 			const img = 
 				'img/Lenna.png'
@@ -70,16 +75,14 @@
 				photo_holder.load(result);
 			});
 
-			document.body.appendChild(open_input);
+			add_opener(photo_holder.load.bind(photo_holder))
+			// handle_drop(document.body, photo_holder.load.bind(photo_holder))
+			// document.body.appendChild(open_input);
 
 			const dom = editor.canvas;
 			document.body.appendChild(dom);
 			document.body.appendChild(mapper.canvas);
 			document.body.appendChild(photo.canvas);
-			
-
-
-
 		</script>
 	</body>
 </html>
