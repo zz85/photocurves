@@ -3,10 +3,8 @@ var gl, program, vao;
 function init() {
     // follow this! https://webgl2fundamentals.org/webgl/lessons/webgl-fundamentals.html
     var canvas = document.createElement('canvas');
-    // canvas.width = innerWidth;
-    // canvas.height = innerHeight;
-    canvas.width = 400;
-    canvas.height = 300;
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
 
     document.body.appendChild(canvas);
     gl = canvas.getContext('webgl2');
@@ -69,7 +67,7 @@ function init() {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
     // Vertex Array Object (attribute state)
-    var vao = gl.createVertexArray();
+    vao = gl.createVertexArray();
     
     gl.bindVertexArray(vao);
     
