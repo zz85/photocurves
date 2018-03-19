@@ -1,4 +1,4 @@
-var gl, program, vao;
+var gl, program, vao, resolutionUniformLocation;
 
 function init() {
     // follow this! https://webgl2fundamentals.org/webgl/lessons/webgl-fundamentals.html
@@ -14,18 +14,20 @@ function init() {
         return;
     }
 
-
     var vertexShaderSource = `#version 300 es
  
     // an attribute is an input (in) to a vertex shader.
     // It will receive data from a buffer
-    in vec4 a_position;
-     
+    in vec2 a_position;
+    uniform vec2 u_resolution;
+
     // all shaders have a main function
     void main() {
       // gl_Position is a special variable a vertex shader
       // is responsible for setting
-      gl_Position = a_position;
+      vec2 moo = a_position;
+      moo.x *= u_resolution.x;
+      gl_Position = vec4(moo, 0, 1);
     }    
     `;
 
@@ -51,6 +53,9 @@ function init() {
     
     // attributes
     var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+    console.log('positionAttributeLocation', positionAttributeLocation);
+    // var
+    resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
 
     // buffers to power attributes
     var positionBuffer = gl.createBuffer();
@@ -87,7 +92,7 @@ function init() {
     gl.vertexAttribPointer(
         positionAttributeLocation, size, type, normalize, stride, offset
     );
-    
+
 
     drawScene();
 }
@@ -98,13 +103,19 @@ function drawScene() {
     
     // clear canvas
     gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // tell webgl which program to use
     gl.useProgram(program);
 
     // bind the attributes
-    gl.bindVertexArray(vao);
+    gl.bindVertexArray(vao); // again!?
+
+    console.log('resolutionUniformLocation', resolutionUniformLocation);
+    gl.uniform2f(resolutionUniformLocation, 1.5, 1.5);
+    // gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    
+    
 
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
