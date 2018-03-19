@@ -63,6 +63,10 @@ function init() {
         0, 0,
         0, 0.5,
         0.7, 0,
+
+        -1, -1,
+        -0.5, -1,
+        -0.5, -0.5,
     ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
@@ -104,7 +108,7 @@ function drawScene() {
 
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
-    var count = 3;
+    var count = 6;
 
     gl.drawArrays(primitiveType, offset, count);
 }
