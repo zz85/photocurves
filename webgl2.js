@@ -3,7 +3,7 @@ var gl, program, vao, resolutionUniformLocation;
 function init() {
     // follow this! https://webgl2fundamentals.org/webgl/lessons/webgl-fundamentals.html
     // then https://webgl2fundamentals.org/webgl/lessons/webgl-image-processing.html
-    
+
     var canvas = document.createElement('canvas');
     canvas.width = innerWidth;
     canvas.height = innerHeight;
@@ -16,12 +16,27 @@ function init() {
         return;
     }
 
+    var image = new Image();
+    image.src = "img/Lenna.png";
+    image.onload = function() {
+        render(image);
+    }
+}
+
+function render(image) {
     var vertexShaderSource = `#version 300 es
  
     // an attribute is an input (in) to a vertex shader.
     // It will receive data from a buffer
     in vec2 a_position;
+    in vec2 a_texCoord;
+
+    // globals
     uniform vec2 u_resolution;
+
+    // varyings
+    out vec2 v_texCoord;
+    
 
     // all shaders have a main function
     void main() {
@@ -37,22 +52,29 @@ function init() {
       // convert from 0->2 to -1->+1 (clipspace)
       vec2 clipSpace = zeroToTwo - 1.0;
     
-      gl_Position = vec4(clipSpace, 0, 1);
+      gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+      v_texCoord = a_texCoord;
     }    
     `;
 
-    var fragmentShaderSource = `#version 300 es
- 
+    var fragmentShaderSource = `#version 300 es 
     // fragment shaders don't have a default precision so we need
     // to pick one. mediump is a good default. It means "medium precision"
     precision mediump float;
      
+    // our texture
+    uniform sampler2D u_image;
+
     // we need to declare an output for the fragment shader
     out vec4 outColor;
+
+    // the texCoords passed in from the vertex shader.
+    in vec2 v_texCoord;
      
     void main() {
       // Just set the output to a constant redish-purple
-      outColor = vec4(1, 0, 0.5, 1);
+    //   outColor = vec4(1, 0, 0.5, 1);
+        outColor = texture(u_image, v_texCoord);
     }
     `;
 
@@ -63,9 +85,60 @@ function init() {
     
     // attributes
     var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
-    console.log('positionAttributeLocation', positionAttributeLocation);
-    // var
+    var texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
+
+    // lookup uniforms
     resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+    imageLocation = gl.getUniformLocation(program, 'u_image');
+
+    // Vertex Array Object (attribute state)
+    vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+
+    var texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+        0.0, 0.0,
+        1.0, 0.0,
+        0.0, 1.0,
+        0.0, 1.0,
+        1.0, 0.0,
+        1.0, 1.0
+    ]), gl.STATIC_DRAW);
+    
+    gl.enableVertexAttribArray(texCoordAttributeLocation);
+    var size = 2;
+    var type = gl.FLOAT;
+    var normalize = false;
+    var stride = 0;
+    var offset = 0;
+    gl.vertexAttribPointer(texCoordAttributeLocation, size, type, normalize, stride, offset);
+
+    var texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + 0);
+    console.log('gl.TEXTURE0 + 0', gl.TEXTURE0 + 0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    // Set the parameters so we don't need mips and so we're not filtering
+    // and we don't repeat
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    var mipLevel = 0; // largest mip
+    var internalFormat = gl.RGBA;
+    var srcFormat = gl.RGBA;
+    var srcType = gl.UNSIGNED_BYTE;
+    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
+    gl.useProgram(program);
+
+
+    // 2d
+     // Tell the shader to get the texture from texture unit 0
+    gl.uniform1i(imageLocation, 0);
+
+    console.log('imageLocation', imageLocation);
 
     // buffers to power attributes
     var positionBuffer = gl.createBuffer();
@@ -74,22 +147,19 @@ function init() {
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
     // fill buffers
-    var positions = [
-        0, 0,
-        0, 0.8,
-        0.7, 0,
+    // var positions = [
+    //     0, 0,
+    //     0, 0.8,
+    //     0.7, 0,
 
-        0, 0,
-        1.0, 1,
-        0, 1,
-    ];
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    //     0, 0,
+    //     1.0, 1,
+    //     0, 1,
+    // ];
+    
+    // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    setRectangle(gl, 0, 0, gl.canvas.width, gl.canvas.height);
 
-    // Vertex Array Object (attribute state)
-    vao = gl.createVertexArray();
-    
-    gl.bindVertexArray(vao);
-    
     // we want data out of our buffers
     gl.enableVertexAttribArray(positionAttributeLocation);
 
@@ -107,6 +177,26 @@ function init() {
     drawScene();
 }
 
+function setRectangle(gl, x, y, width, height) {
+    var x1 = x;
+    var x2 = x + width;
+    var y1 = y;
+    var y2 = y + height;
+   
+    // NOTE: gl.bufferData(gl.ARRAY_BUFFER, ...) will affect
+    // whatever buffer is bound to the `ARRAY_BUFFER` bind point
+    // but so far we only have one buffer. If we had more than one
+    // buffer we'd want to bind that buffer to `ARRAY_BUFFER` first.
+   
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+       x1, y1,
+       x2, y1,
+       x1, y2,
+       x1, y2,
+       x2, y1,
+       x2, y2]), gl.STATIC_DRAW);
+  }
+
 function drawScene() {
     resize(gl.canvas); // resize canvas
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height); // set viewport (remap -1..1)
@@ -122,8 +212,8 @@ function drawScene() {
     gl.bindVertexArray(vao); // again!?
 
     console.log('resolutionUniformLocation', resolutionUniformLocation);
-    gl.uniform2f(resolutionUniformLocation, 1.5, 1.5);
-    // gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    // gl.uniform2f(resolutionUniformLocation, 1.5, 1.5);
+    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
     
     
 
