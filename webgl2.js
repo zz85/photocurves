@@ -19,6 +19,8 @@ function init() {
     var image = new Image();
     image.src = "img/Lenna.png";
     image.onload = function() {
+        canvas.width = image.width;
+        canvas.height = image.height;
         render(image);
     }
 }
@@ -74,7 +76,11 @@ function render(image) {
     void main() {
       // Just set the output to a constant redish-purple
     //   outColor = vec4(1, 0, 0.5, 1);
-        outColor = texture(u_image, v_texCoord);
+        vec4 rgba = texture(u_image, v_texCoord);
+        // rgba.x = rgba.x * rgba.x;
+        // rgba.y = 1. - (1. - rgba.y) * (1. - rgba.y);
+        // rgba.z = rgba.z * rgba.z;
+        outColor = rgba;
     }
     `;
 
@@ -132,7 +138,6 @@ function render(image) {
     var srcType = gl.UNSIGNED_BYTE;
     gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
     gl.useProgram(program);
-
 
     // 2d
      // Tell the shader to get the texture from texture unit 0
