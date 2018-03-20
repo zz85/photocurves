@@ -103,7 +103,7 @@ class GridArea {
 		notify('POINTS_UPDATED', this.points);
 	}
 
-	dblclick(x, y, a, b) {
+	mousedown(x, y, a, b) { // dblclick
 		const box = new BoxElement(a / this.width, 1 - b / this.height);
 		this.children.push(box);
 		this.points.push(box);
@@ -421,6 +421,8 @@ class CanvasElement {
 					};
 				}
 			})
+
+			e.preventDefault();
 		})
 
 		canvas.addEventListener('dblclick', (e) => {
@@ -431,6 +433,7 @@ class CanvasElement {
 						return child.dblclick(x, y, x - cx, y - cy);
 				}
 			})
+			
 		})
 
 		this.children = children || [];
