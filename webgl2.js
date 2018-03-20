@@ -2,6 +2,8 @@ var gl, program, vao, resolutionUniformLocation;
 
 function init() {
     // follow this! https://webgl2fundamentals.org/webgl/lessons/webgl-fundamentals.html
+    // then https://webgl2fundamentals.org/webgl/lessons/webgl-image-processing.html
+    
     var canvas = document.createElement('canvas');
     canvas.width = innerWidth;
     canvas.height = innerHeight;
@@ -25,9 +27,17 @@ function init() {
     void main() {
       // gl_Position is a special variable a vertex shader
       // is responsible for setting
-      vec2 moo = a_position;
-      moo.x *= u_resolution.x;
-      gl_Position = vec4(moo, 0, 1);
+      
+      // convert the position from pixels to 0.0 to 1.0
+      vec2 zeroToOne = a_position / u_resolution;
+      
+      // convert from 0->1 to 0->2
+      vec2 zeroToTwo = zeroToOne * 2.0;
+    
+      // convert from 0->2 to -1->+1 (clipspace)
+      vec2 clipSpace = zeroToTwo - 1.0;
+    
+      gl_Position = vec4(clipSpace, 0, 1);
     }    
     `;
 
@@ -66,12 +76,12 @@ function init() {
     // fill buffers
     var positions = [
         0, 0,
-        0, 0.5,
+        0, 0.8,
         0.7, 0,
 
-        -1, -1,
-        -0.5, -1,
-        -0.5, -0.5,
+        0, 0,
+        1.0, 1,
+        0, 1,
     ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
