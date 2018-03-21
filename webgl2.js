@@ -1,4 +1,4 @@
-var gl, program, vao, resolutionUniformLocation;
+var gl, program, vao, resolutionUniformLocation, sliderValue = 0;
 
 function init() {
     // follow this! https://webgl2fundamentals.org/webgl/lessons/webgl-fundamentals.html
@@ -7,6 +7,15 @@ function init() {
     var canvas = document.createElement('canvas');
     canvas.width = innerWidth;
     canvas.height = innerHeight;
+
+    canvas.onmousemove = (e) => {
+        var t = e.offsetX  / canvas.width;
+        console.log(t);
+
+        sliderValue = t;
+        if (resolutionUniformLocation)
+            drawScene();
+    }
 
     document.body.appendChild(canvas);
     gl = canvas.getContext('webgl2');
@@ -66,6 +75,7 @@ function render(image) {
      
     // our texture
     uniform sampler2D u_image;
+    uniform float u_slider;
 
     // we need to declare an output for the fragment shader
     out vec4 outColor;
@@ -80,6 +90,9 @@ function render(image) {
         // rgba.x = rgba.x * rgba.x;
         // rgba.y = 1. - (1. - rgba.y) * (1. - rgba.y);
         // rgba.z = rgba.z * rgba.z;
+        // rgba.rgb *= 1.2;
+        rgba.rgb += (u_slider-0.5) * 2.;
+        // rgba.rgb *= 1. + (u_slider-0.5) * 2.;
         outColor = rgba;
     }
     `;
@@ -96,6 +109,8 @@ function render(image) {
     // lookup uniforms
     resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
     imageLocation = gl.getUniformLocation(program, 'u_image');
+    sliderUniformLocation = gl.getUniformLocation(program, "u_slider");
+
 
     // Vertex Array Object (attribute state)
     vao = gl.createVertexArray();
@@ -142,8 +157,6 @@ function render(image) {
     // 2d
      // Tell the shader to get the texture from texture unit 0
     gl.uniform1i(imageLocation, 0);
-
-    console.log('imageLocation', imageLocation);
 
     // buffers to power attributes
     var positionBuffer = gl.createBuffer();
@@ -220,7 +233,7 @@ function drawScene() {
     // gl.uniform2f(resolutionUniformLocation, 1.5, 1.5);
     gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
     
-    
+    gl.uniform1f(sliderUniformLocation, sliderValue)
 
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
