@@ -308,7 +308,7 @@ const imageToData = (src, callback) => {
 		canvas.height = height;
 		ctx.drawImage(img, 0, 0);
 		const data = ctx.getImageData(0, 0, width, height);
-		callback && callback(data);
+		callback && callback(data, img);
 	};
 }
 

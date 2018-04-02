@@ -32,8 +32,8 @@ class WebGL2Processor {
 
 	init() {
 		var canvas = document.createElement('canvas');
-		canvas.width = innerWidth;
-		canvas.height = innerHeight;
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
 
 		var gl = canvas.getContext('webgl2');
 
