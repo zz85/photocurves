@@ -75,6 +75,7 @@ function render(image) {
      
     // our texture
     uniform sampler2D u_image;
+    uniform sampler2D u_curve;
     uniform float u_slider;
 
     // we need to declare an output for the fragment shader
@@ -86,12 +87,12 @@ function render(image) {
     void main() {
       // Just set the output to a constant redish-purple
     //   outColor = vec4(1, 0, 0.5, 1);
-        vec4 rgba = texture(u_image, v_texCoord);
+        vec4 rgba = texture(u_curve, v_texCoord);
         // rgba.x = rgba.x * rgba.x;
         // rgba.y = 1. - (1. - rgba.y) * (1. - rgba.y);
         // rgba.z = rgba.z * rgba.z;
         // rgba.rgb *= 1.2;
-        rgba.rgb += (u_slider-0.5) * 2.;
+        // rgba.rgb += (u_slider-0.5) * 2.;
         // rgba.rgb *= 1. + (u_slider-0.5) * 2.;
         outColor = rgba;
     }
@@ -110,6 +111,7 @@ function render(image) {
     resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
     imageLocation = gl.getUniformLocation(program, 'u_image');
     sliderUniformLocation = gl.getUniformLocation(program, "u_slider");
+    curveLocation = gl.getUniformLocation(program, 'u_curve');
 
 
     // Vertex Array Object (attribute state)
@@ -124,7 +126,7 @@ function render(image) {
         0.0, 1.0,
         0.0, 1.0,
         1.0, 0.0,
-        1.0, 1.0
+        1.0, 1.0    
     ]), gl.STATIC_DRAW);
     
     gl.enableVertexAttribArray(texCoordAttributeLocation);
@@ -135,28 +137,15 @@ function render(image) {
     var offset = 0;
     gl.vertexAttribPointer(texCoordAttributeLocation, size, type, normalize, stride, offset);
 
-    var texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0 + 0);
-    console.log('gl.TEXTURE0 + 0', gl.TEXTURE0 + 0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    createTexture(gl, 0, image);
 
-    // Set the parameters so we don't need mips and so we're not filtering
-    // and we don't repeat
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    var mipLevel = 0; // largest mip
-    var internalFormat = gl.RGBA;
-    var srcFormat = gl.RGBA;
-    var srcType = gl.UNSIGNED_BYTE;
-    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
-    gl.useProgram(program);
+    createTexture(gl, 1, image);
 
     // 2d
      // Tell the shader to get the texture from texture unit 0
-    gl.uniform1i(imageLocation, 0);
+    // gl.uniform1i(imageLocation, 0);
+    // gl.uniform1i(curveLocation, 1);
 
     // buffers to power attributes
     var positionBuffer = gl.createBuffer();
@@ -277,6 +266,27 @@ function createProgram(gl, vertexShader, fragmentShader) {
     console.log(log);
 
     gl.deleteProgram(program);
+}
+
+function createTexture(gl, i, image) {
+    var texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    // Set the parameters so we don't need mips and so we're not filtering
+    // and we don't repeat
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    var mipLevel = 0; // largest mip
+    var internalFormat = gl.RGBA;
+    var srcFormat = gl.RGBA;
+    var srcType = gl.UNSIGNED_BYTE;
+    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
+
+    // state.texImage2D( _gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, glFormat, cubeImage[ i ].width, cubeImage[ i ].height, 0, glFormat, glType, cubeImage[ i ].data );
 }
 
 function resize(canvas) {
