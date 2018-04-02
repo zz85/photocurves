@@ -1,8 +1,31 @@
 var gl, program, vao, resolutionUniformLocation, sliderValue = 0;
 
+class WebGL2Processor {
+    constructor(vertexShaderSource, fragmentShaderSource) {
+        // get context
+        // compile program
+        // attributes
+        // uniforms
+
+    }
+
+    updateUniform(name, ...values) {
+
+    }
+
+    render() {
+
+    }
+
+    _compile() {
+        
+    }
+}
+
 function init() {
     // follow this! https://webgl2fundamentals.org/webgl/lessons/webgl-fundamentals.html
     // then https://webgl2fundamentals.org/webgl/lessons/webgl-image-processing.html
+    // then https://webgl2fundamentals.org/webgl/lessons/webgl-less-code-more-fun.html
 
     var canvas = document.createElement('canvas');
     canvas.width = innerWidth;
@@ -100,24 +123,42 @@ function render(image) {
 
     program = createProgram(gl, vertexShader, fragmentShader);
     
+
     // attributes
     var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
     var texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
 
-    // lookup uniforms
-    resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
+    resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution');
     imageLocation = gl.getUniformLocation(program, 'u_image');
     sliderUniformLocation = gl.getUniformLocation(program, "u_slider");
-
     curveLocation = gl.getUniformLocation(program, 'u_curve');
 
-    // will not be null if shader compiles
-    console.log('imageLocation', imageLocation);
-    console.log('sliderUniformLocation', sliderUniformLocation);
-    console.log('curveLocation', curveLocation);
+    function uniformType(name, type) {
+        return { name, type: type || 'f' };
+    }
+
+    uniforms = [
+        uniformType('u_resolution'),
+        uniformType('u_slider', 'f'),
+        uniformType('u_curve', 'i'), // textures
+        uniformType('u_image', 'i'),
+    ];
+
+    program._uniforms = {};
+
+    // lookup uniforms
+    uniforms.forEach(uniform => {
+        var name = uniform.name;
+        var location = gl.getUniformLocation(program, name);
+        if (location === null) console.warn(`Warning: uniform [${name}] not found in shaders`);
+
+        program._uniforms[name] = uniform;
+        uniform._location = location;
+    });
 
     // Vertex Array Object (attribute state)
     vao = gl.createVertexArray();
+
     gl.bindVertexArray(vao);
 
     var texCoordBuffer = gl.createBuffer();
@@ -144,18 +185,14 @@ function render(image) {
     
     data = new Float32Array(256 * 1 * 4);
 
-    for (var i = 0; i < 256; i++) {
-        var t = i / 256;
-        // t = t * t; // push
-        t = 1 - (1 - t) * (1 - t); // pull
-        data[i * 4 + 0] = t;
-        data[i * 4 + 1] = t;
-        data[i * 4 + 2] = t;
-        data[i * 4 + 3] = 1;
-    }
+    fillData1();
     console.log('data', data.length);
 
-    updateDataTexture(gl, 1, data);
+    curveTexture = {
+        gl, i: 1, data
+    }
+
+    updateDataTexture(curveTexture);
 
     // buffers to power attributes
     var positionBuffer = gl.createBuffer();    
@@ -192,17 +229,44 @@ function render(image) {
     // tell webgl which program to use
     gl.useProgram(program);
 
-
     updateUniforms();
     drawScene();
 }
 
+function fillData1() {
+    for (var i = 0; i < 256; i++) {
+        var t = i / 256;
+        t = t * t; // push
+        data[i * 4 + 0] = t;
+        data[i * 4 + 1] = t;
+        data[i * 4 + 2] = t;
+        data[i * 4 + 3] = 1;
+    }
+}
+
+function fillData2() {
+    for (var i = 0; i < 256; i++) {
+        var t = i / 256;
+        t = 1 - (1 - t) * (1 - t); // pull
+        data[i * 4 + 0] = t;
+        data[i * 4 + 1] = t;
+        data[i * 4 + 2] = t;
+        data[i * 4 + 3] = 1;
+    }
+}
+
+function updateUniform(name, ...values) {
+    var { _location, type } = program._uniforms[name];
+    var method = `uniform${values.length}${type}`;
+    gl[method](_location, ...values);
+}
+
 function updateUniforms() {
     // update uniforms
-    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
-    gl.uniform1f(sliderUniformLocation, sliderValue)
-    gl.uniform1i(imageLocation, 0);
-    gl.uniform1i(curveLocation, 1);
+    updateUniform('u_resolution', gl.canvas.width, gl.canvas.height);
+    updateUniform('u_slider', sliderValue);
+    updateUniform('u_image', 0);
+    updateUniform('u_curve', 1);
 }
 
 function setRectangle(gl, x, y, width, height) {
@@ -233,11 +297,9 @@ function drawScene() {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // tell webgl which program to use
-    gl.useProgram(program);
 
     // bind the attributes
-    gl.bindVertexArray(vao); // again!?
+    // gl.bindVertexArray(vao); // again!?
 
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
@@ -303,10 +365,14 @@ function createTexture(gl, i, image) {
     gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
 }
 
-function updateDataTexture(gl, i, data) {
-    var texture = gl.createTexture();
-    gl.activeTexture(gl.TEXTURE0 + i);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+function updateDataTexture(state) {
+    var { gl, i, data, texture } = state;
+    if (!texture) {
+        var texture = gl.createTexture();
+        gl.activeTexture(gl.TEXTURE0 + i);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        state.texture = texture;
+    }
 
 //   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 //   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, options.filter || options.magFilter || gl.LINEAR);
@@ -339,7 +405,7 @@ function updateDataTexture(gl, i, data) {
         border,
         srcFormat,
         srcType,
-        data, 0 );
+        data );
 }
 
 function resize(canvas) {
@@ -351,10 +417,10 @@ function resize(canvas) {
     if (canvas.width  !== displayWidth ||
         canvas.height !== displayHeight) {
    
-      // Make the canvas the same size
-      canvas.width  = displayWidth;
-      canvas.height = displayHeight;
+        // Make the canvas the same size
+        canvas.width  = displayWidth;
+        canvas.height = displayHeight;
     }
-  }
+}
 
 init();
