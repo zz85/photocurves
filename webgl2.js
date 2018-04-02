@@ -85,26 +85,13 @@ function render(image) {
     in vec2 v_texCoord;
      
     void main() {
-        vec4 curve = texture(u_curve, vec2(v_texCoord.x, 0.5));
-        vec4 rgba = texture(u_image, v_texCoord);
+        vec4 source = texture(u_image, v_texCoord);
+        float curve = texture(u_curve, vec2(
+            (source.x + source.y + source.z) / 3.
+                , 0.5)).x;
 
-        // rgba.xyz *= curve.x;
-        // float t = texture(v_texCoord
-     
-        // rgba.x = rgba.x * rgba.x;
-        rgba = curve;
-
-        // Just set the output to a constant redish-purple
-        // rgba = vec4(1, 0, 0.5, 1);
-      
-
-
-        // rgba.y = 1. - (1. - rgba.y) * (1. - rgba.y);
-        // rgba.z = rgba.z * rgba.z;
-        // rgba.rgb *= 1.2;
-        // rgba.rgb += (u_slider-0.5) * 2.;
         // rgba.rgb *= 1. + (u_slider-0.5) * 2.;
-        outColor = rgba;
+        outColor = vec4(vec3(curve), 1.0);
     }
     `;
 
@@ -190,7 +177,15 @@ function render(image) {
         positionAttributeLocation, size, type, normalize, stride, offset
     );
 
+    // tell webgl which program to use
+    gl.useProgram(program);
 
+    // update uniforms
+    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    gl.uniform1f(sliderUniformLocation, sliderValue)
+    gl.uniform1i(imageLocation, 0);
+    gl.uniform1i(curveLocation, 1);
+    
     drawScene();
 }
 
@@ -225,19 +220,14 @@ function drawScene() {
     // tell webgl which program to use
     gl.useProgram(program);
 
+    // // update uniforms
+    // gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
+    // gl.uniform1f(sliderUniformLocation, sliderValue)
+    // gl.uniform1i(imageLocation, 0);
+    // gl.uniform1i(curveLocation, 1);
+
     // bind the attributes
     gl.bindVertexArray(vao); // again!?
-
-    console.log('resolutionUniformLocation', resolutionUniformLocation);
-    // gl.uniform2f(resolutionUniformLocation, 1.5, 1.5);
-    gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
-    
-    gl.uniform1f(sliderUniformLocation, sliderValue)
-
-    gl.uniform1i(imageLocation, 0);
-    gl.uniform1i(curveLocation, 1);
-
-
 
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
@@ -311,7 +301,7 @@ function createDataTexture(gl, i, image) {
     gl.activeTexture(gl.TEXTURE0 + i);
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
-//     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+//   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 //   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, options.filter || options.magFilter || gl.LINEAR);
 //   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, options.filter || options.minFilter || gl.LINEAR);
 //   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.wrap || options.wrapS || gl.CLAMP_TO_EDGE);
@@ -338,6 +328,8 @@ function createDataTexture(gl, i, image) {
 
     for (var i = 0; i < 256; i++) {
         var t = i / 256;
+        // t = t * t; // push
+        t = 1 - (1 - t) * (1 - t); // pull
         data[i * 4 + 0] = t;
         data[i * 4 + 1] = t;
         data[i * 4 + 2] = t;
