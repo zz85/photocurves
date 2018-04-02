@@ -1,7 +1,9 @@
-var gl, program, vao, sliderValue = 0;
+var gl, program, sliderValue = 0;
 
 class WebGL2Processor {
-	constructor(vertexShaderSource, fragmentShaderSource) {
+	constructor() {
+		this.uniforms = [];
+		this.init();
 		// get context
 		// compile program
 		// attributes
@@ -9,16 +11,136 @@ class WebGL2Processor {
 
 	}
 
+	init() {
+		var canvas = document.createElement('canvas');
+		canvas.width = innerWidth;
+		canvas.height = innerHeight;
+
+		var gl = canvas.getContext('webgl2');
+
+		this.canvas = canvas;
+		this.gl = gl;
+
+		if (!gl) {
+			console.log('webgl2 not support');
+			return;
+		}
+	}
+
+	compile(vertexShaderSource, fragmentShaderSource) {
+		var gl = this.gl;
+		var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+		var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+		var program = createProgram(gl, vertexShader, fragmentShader);
+
+		this.program = program;
+		gl.useProgram(program);
+	}
+
+	defineUniform(name, type, ...values) {
+		this.uniforms.push(this._uniformType(name, type, ...values));
+	}
+
+	_uniformType(name, type, ...values) {
+		return { name, type: type || 'f', values };
+	}
+
+	lookupUniforms() {
+		this._uniforms = {};
+
+		var gl = this.gl;
+		var program = this.program;
+
+		// lookup uniforms
+		this.uniforms.forEach(uniform => {
+			var name = uniform.name;
+			var location = gl.getUniformLocation(program, name);
+			if (location === null) console.warn(`Warning: uniform [${name}] not found in shaders`);
+
+			uniform._location = location;
+			this._uniforms[name] = uniform; // cache
+		});
+	}
+
 	updateUniform(name, ...values) {
+		var { _location, type } = this._uniforms[name];
+		var method = `uniform${values.length}${type}`;
+		this.gl[method](_location, ...values);
+	}
+
+	setupAttributes() {
+		var program = this.program;
+		var gl = this.gl;
+		// attributes
+		var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+		var texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
+
+		// Vertex Array Object (attribute state)
+		var vao = gl.createVertexArray();
+		gl.bindVertexArray(vao);
+
+		var texCoordBuffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+			0.0, 0.0,
+			1.0, 0.0,
+			0.0, 1.0,
+			0.0, 1.0,
+			1.0, 0.0,
+			1.0, 1.0
+		]), gl.STATIC_DRAW);
+
+		gl.enableVertexAttribArray(texCoordAttributeLocation);
+		var size = 2;
+		var type = gl.FLOAT;
+		var normalize = false;
+		var stride = 0;
+		var offset = 0;
+		gl.vertexAttribPointer(texCoordAttributeLocation, size, type, normalize, stride, offset);
+
+		// buffers to power attributes
+		var positionBuffer = gl.createBuffer();
+		// bind buffer to attribute
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+		setRectangle(gl, 0, 0, gl.canvas.width, gl.canvas.height);
+
+		// we want data out of our buffers
+		gl.enableVertexAttribArray(positionAttributeLocation);
+
+		var size = 2; // 2 components per iterations
+		var type = gl.FLOAT; // 32 bits
+		var normalize = false; // dont normalize data
+		var stride = 0; // size * sizeof(type) to get to next
+		var offset = 0; //
+
+		gl.vertexAttribPointer(
+			positionAttributeLocation, size, type, normalize, stride, offset
+		);
 
 	}
 
-	render() {
+	draw() {
+		var program = this.program;
+		var gl = this.gl;
+		if (!program) return console.log('no program');
+		resize(gl.canvas); // resize canvas
+		gl.viewport(0, 0, gl.canvas.width, gl.canvas.height); // set viewport (remap -1..1)
 
+		// clear canvas
+		gl.clearColor(0, 0, 0, 0);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+		var primitiveType = gl.TRIANGLES;
+		var offset = 0;
+		var count = 6;
+
+		gl.drawArrays(primitiveType, offset, count);
 	}
 
 	_compile() {
-		
+
+
 	}
 }
 
@@ -27,28 +149,21 @@ function init() {
 	// then https://webgl2fundamentals.org/webgl/lessons/webgl-image-processing.html
 	// then https://webgl2fundamentals.org/webgl/lessons/webgl-less-code-more-fun.html
 
-	var canvas = document.createElement('canvas');
-	canvas.width = innerWidth;
-	canvas.height = innerHeight;
+	glProcessor = new WebGL2Processor();
+	canvas = glProcessor.canvas;
+	gl = glProcessor.gl;
 
 	canvas.onmousemove = (e) => {
 		var t = e.offsetX  / canvas.width;
 		// console.log(t);
 
 		sliderValue = t;
-		
+
 		drawScene();
 	}
 
 	document.body.appendChild(canvas);
-	gl = canvas.getContext('webgl2');
 
-	if (!gl) {
-		console.log('webgl2 not support');
-		return;
-	}
-
-	
 	var image = new Image();
 	imageTexture = { gl, i: 0, image }
 	render();
@@ -66,7 +181,7 @@ function init() {
 
 function render() {
 	var vertexShaderSource = `#version 300 es
- 
+
 	// an attribute is an input (in) to a vertex shader.
 	// It will receive data from a buffer
 	in vec2 a_position;
@@ -77,32 +192,32 @@ function render() {
 
 	// varyings
 	out vec2 v_texCoord;
-	
+
 
 	// all shaders have a main function
 	void main() {
 	  // gl_Position is a special variable a vertex shader
 	  // is responsible for setting
-	  
+
 	  // convert the position from pixels to 0.0 to 1.0
 	  vec2 zeroToOne = a_position / u_resolution;
-	  
+
 	  // convert from 0->1 to 0->2
 	  vec2 zeroToTwo = zeroToOne * 2.0;
-	
+
 	  // convert from 0->2 to -1->+1 (clipspace)
 	  vec2 clipSpace = zeroToTwo - 1.0;
-	
+
 	  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
 	  v_texCoord = a_texCoord;
-	}    
+	}
 	`;
 
-	var fragmentShaderSource = `#version 300 es 
+	var fragmentShaderSource = `#version 300 es
 	// fragment shaders don't have a default precision so we need
 	// to pick one. mediump is a good default. It means "medium precision"
 	precision mediump float;
-	 
+
 	// our texture
 	uniform sampler2D u_image;
 	uniform sampler2D u_curve;
@@ -113,7 +228,7 @@ function render() {
 
 	// the texCoords passed in from the vertex shader.
 	in vec2 v_texCoord;
-	 
+
 	void main() {
 		vec4 source = texture(u_image, v_texCoord);
 		float curve = texture(u_curve, vec2(
@@ -125,68 +240,21 @@ function render() {
 	}
 	`;
 
-	var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-	var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+	glProcessor.compile(vertexShaderSource, fragmentShaderSource);
 
-	program = createProgram(gl, vertexShader, fragmentShader);
-	
-   // tell webgl which program to use
-   gl.useProgram(program);
-	// attributes
-	var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
-	var texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
-
-	function uniformType(name, type, ...values) {
-		return { name, type: type || 'f', values };
-	}
-
-	uniforms = [
-		uniformType('u_resolution'),
-		uniformType('u_slider', 'f'),
-		uniformType('u_curve', 'i'), // textures
-		uniformType('u_image', 'i'),
-	];
-
-	program._uniforms = {};
-
-	// lookup uniforms
-	uniforms.forEach(uniform => {
-		var name = uniform.name;
-		var location = gl.getUniformLocation(program, name);
-		if (location === null) console.warn(`Warning: uniform [${name}] not found in shaders`);
-
-		program._uniforms[name] = uniform;
-		uniform._location = location;
-	});
+	// uniforms
+	glProcessor.defineUniform('u_resolution');
+	glProcessor.defineUniform('u_slider', 'f');
+	glProcessor.defineUniform('u_curve', 'i'); // textures
+	glProcessor.defineUniform('u_image', 'i');
+	glProcessor.lookupUniforms();
 
 	updateUniforms();
 
-	// Vertex Array Object (attribute state)
-	vao = gl.createVertexArray();
-
-	gl.bindVertexArray(vao);
-
-	var texCoordBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-		0.0, 0.0,
-		1.0, 0.0,
-		0.0, 1.0,
-		0.0, 1.0,
-		1.0, 0.0,
-		1.0, 1.0    
-	]), gl.STATIC_DRAW);
-	
-	gl.enableVertexAttribArray(texCoordAttributeLocation);
-	var size = 2;
-	var type = gl.FLOAT;
-	var normalize = false;
-	var stride = 0;
-	var offset = 0;
-	gl.vertexAttribPointer(texCoordAttributeLocation, size, type, normalize, stride, offset);
+	glProcessor.setupAttributes();
 
 	// Tell the shader to get the texture from texture unit 0
-	
+
 	data = new Float32Array(256 * 1 * 4);
 
 	fillData1();
@@ -197,27 +265,6 @@ function render() {
 	}
 
 	updateDataTexture(curveTexture);
-
-	// buffers to power attributes
-	var positionBuffer = gl.createBuffer();    
-	// bind buffer to attribute
-	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-	setRectangle(gl, 0, 0, gl.canvas.width, gl.canvas.height);
-
-	// we want data out of our buffers
-	gl.enableVertexAttribArray(positionAttributeLocation);
-
-	var size = 2; // 2 components per iterations
-	var type = gl.FLOAT; // 32 bits
-	var normalize = false; // dont normalize data
-	var stride = 0; // size * sizeof(type) to get to next
-	var offset = 0; // 
-
-	gl.vertexAttribPointer(
-		positionAttributeLocation, size, type, normalize, stride, offset
-	);
-
 
 	drawScene();
 }
@@ -244,18 +291,12 @@ function fillData2() {
 	}
 }
 
-function updateUniform(name, ...values) {
-	var { _location, type } = program._uniforms[name];
-	var method = `uniform${values.length}${type}`;
-	gl[method](_location, ...values);
-}
-
 function updateUniforms() {
 	// update uniforms
-	updateUniform('u_resolution', gl.canvas.width, gl.canvas.height);
-	updateUniform('u_slider', sliderValue);
-	updateUniform('u_image', 0);
-	updateUniform('u_curve', 1);
+	glProcessor.updateUniform('u_resolution', gl.canvas.width, gl.canvas.height);
+	glProcessor.updateUniform('u_slider', sliderValue);
+	glProcessor.updateUniform('u_image', 0);
+	glProcessor.updateUniform('u_curve', 1);
 }
 
 function setRectangle(gl, x, y, width, height) {
@@ -263,12 +304,12 @@ function setRectangle(gl, x, y, width, height) {
 	var x2 = x + width;
 	var y1 = y;
 	var y2 = y + height;
-   
+
 	// NOTE: gl.bufferData(gl.ARRAY_BUFFER, ...) will affect
 	// whatever buffer is bound to the `ARRAY_BUFFER` bind point
 	// but so far we only have one buffer. If we had more than one
 	// buffer we'd want to bind that buffer to `ARRAY_BUFFER` first.
-   
+
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
 		x1, y1,
 		x2, y1,
@@ -279,19 +320,7 @@ function setRectangle(gl, x, y, width, height) {
 }
 
 function drawScene() {
-	if (!program) return;
-	resize(gl.canvas); // resize canvas
-	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height); // set viewport (remap -1..1)
-	
-	// clear canvas
-	gl.clearColor(0, 0, 0, 0);
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-	var primitiveType = gl.TRIANGLES;
-	var offset = 0;
-	var count = 6;
-
-	gl.drawArrays(primitiveType, offset, count);
+	glProcessor.draw();
 }
 
 function createShader(gl, type, source) {
@@ -372,7 +401,7 @@ function updateDataTexture(state) {
 //   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, options.filter || options.minFilter || gl.LINEAR);
 //   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.wrap || options.wrapS || gl.CLAMP_TO_EDGE);
 //   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, options.wrap || options.wrapT || gl.CLAMP_TO_EDGE);
-	
+
 	// Set the parameters so we don't need mips and so we're not filtering
 	// and we don't repeat
 	// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -389,9 +418,9 @@ function updateDataTexture(state) {
 	var textureWidth = 256;
 	var textureHeight = 1;
 
-	gl.texImage2D( 
+	gl.texImage2D(
 		target,
-		mipLevel, 
+		mipLevel,
 		internalFormat,
 		textureWidth,
 		textureHeight,
@@ -405,11 +434,11 @@ function resize(canvas) {
 	// Lookup the size the browser is displaying the canvas.
 	var displayWidth  = canvas.clientWidth;
 	var displayHeight = canvas.clientHeight;
-   
+
 	// Check if the canvas is not the same size.
 	if (canvas.width  !== displayWidth ||
 		canvas.height !== displayHeight) {
-   
+
 		// Make the canvas the same size
 		canvas.width  = displayWidth;
 		canvas.height = displayHeight;
