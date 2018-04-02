@@ -10,7 +10,7 @@ function init() {
 
     canvas.onmousemove = (e) => {
         var t = e.offsetX  / canvas.width;
-        console.log(t);
+        // console.log(t);
 
         sliderValue = t;
         if (resolutionUniformLocation)
@@ -85,10 +85,20 @@ function render(image) {
     in vec2 v_texCoord;
      
     void main() {
-      // Just set the output to a constant redish-purple
-    //   outColor = vec4(1, 0, 0.5, 1);
-        vec4 rgba = texture(u_curve, v_texCoord);
+        vec4 curve = texture(u_curve, vec2(v_texCoord.x, 0.5));
+        vec4 rgba = texture(u_image, v_texCoord);
+
+        // rgba.xyz *= curve.x;
+        // float t = texture(v_texCoord
+     
         // rgba.x = rgba.x * rgba.x;
+        rgba = curve;
+
+        // Just set the output to a constant redish-purple
+        // rgba = vec4(1, 0, 0.5, 1);
+      
+
+
         // rgba.y = 1. - (1. - rgba.y) * (1. - rgba.y);
         // rgba.z = rgba.z * rgba.z;
         // rgba.rgb *= 1.2;
@@ -111,8 +121,13 @@ function render(image) {
     resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution");
     imageLocation = gl.getUniformLocation(program, 'u_image');
     sliderUniformLocation = gl.getUniformLocation(program, "u_slider");
+
     curveLocation = gl.getUniformLocation(program, 'u_curve');
 
+    // will not be null if shader compiles
+    console.log('imageLocation', imageLocation);
+    console.log('sliderUniformLocation', sliderUniformLocation);
+    console.log('curveLocation', curveLocation);
 
     // Vertex Array Object (attribute state)
     vao = gl.createVertexArray();
@@ -138,18 +153,13 @@ function render(image) {
     gl.vertexAttribPointer(texCoordAttributeLocation, size, type, normalize, stride, offset);
 
     createTexture(gl, 0, image);
+    // Tell the shader to get the texture from texture unit 0
+    
+    createDataTexture(gl, 1);
 
-
-    createTexture(gl, 1, image);
-
-    // 2d
-     // Tell the shader to get the texture from texture unit 0
-    // gl.uniform1i(imageLocation, 0);
-    // gl.uniform1i(curveLocation, 1);
 
     // buffers to power attributes
-    var positionBuffer = gl.createBuffer();
-    
+    var positionBuffer = gl.createBuffer();    
     // bind buffer to attribute
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
@@ -224,6 +234,11 @@ function drawScene() {
     
     gl.uniform1f(sliderUniformLocation, sliderValue)
 
+    gl.uniform1i(imageLocation, 0);
+    gl.uniform1i(curveLocation, 1);
+
+
+
     var primitiveType = gl.TRIANGLES;
     var offset = 0;
     var count = 6;
@@ -284,9 +299,65 @@ function createTexture(gl, i, image) {
     var internalFormat = gl.RGBA;
     var srcFormat = gl.RGBA;
     var srcType = gl.UNSIGNED_BYTE;
-    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
 
-    // state.texImage2D( _gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, glFormat, cubeImage[ i ].width, cubeImage[ i ].height, 0, glFormat, glType, cubeImage[ i ].data );
+    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
+}
+
+function createDataTexture(gl, i, image) {
+    var ext = gl.getExtension('OES_texture_float');
+    console.log('ext', ext);
+
+    var texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0 + i);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+//     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, options.filter || options.magFilter || gl.LINEAR);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, options.filter || options.minFilter || gl.LINEAR);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, options.wrap || options.wrapS || gl.CLAMP_TO_EDGE);
+//   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, options.wrap || options.wrapT || gl.CLAMP_TO_EDGE);
+//   gl.texImage2D(gl.TEXTURE_2D, 0, this.format, width, height, 0, this.format, this.type, null);
+    
+
+    // Set the parameters so we don't need mips and so we're not filtering
+    // and we don't repeat
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    var target = gl.TEXTURE_2D;
+    var mipLevel = 0; // largest mip
+    var internalFormat = gl.RGBA32F;
+    var srcFormat = gl.RGBA;
+    var srcType = gl.FLOAT; // UNSIGNED_BYTE FLOAT
+    var border = 0;
+    var textureWidth = 256;
+    var textureHeight = 1;
+    var data = new Float32Array(256 * 1 * 4);
+
+    for (var i = 0; i < 256; i++) {
+        var t = i / 256;
+        data[i * 4 + 0] = t;
+        data[i * 4 + 1] = t;
+        data[i * 4 + 2] = t;
+        data[i * 4 + 3] = 1;
+    }
+    console.log('data', data.length);
+
+    // UNPACK_FLIP_Y_WEBGL
+
+
+    gl.texImage2D( 
+        target,
+        mipLevel, 
+        internalFormat,
+        textureWidth,
+        textureHeight,
+        border,
+        srcFormat,
+        srcType,
+        data, 0 );
 }
 
 function resize(canvas) {
