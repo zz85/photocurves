@@ -312,7 +312,7 @@ const imageToData = (src, callback) => {
 	};
 }
 
-class Photo {
+class ImageElement {
 	constructor(src) {
 		this.load(src)
 	}
