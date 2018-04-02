@@ -1,13 +1,33 @@
-// Simple generic webgl2 library
-
+/**
+ * -------
+ * Simple generic webgl2 library
+ * @author zz85 (https://github.com/zz85 | https://twitter.com/blurspline)
+ * --------
+ * 
+ * Usage
+ * ------
+ * glProcessor = new WebGL2Processor()
+ * // setup
+ * 	.compile()
+ * 	.defineUniform()
+ * 	.lookupUniforms()
+ * 	.setupAttributes()
+ * 
+ * // update
+ * 	.updateUniform(name, ...values)
+ * 	.updateTexture(name, ...image)
+ * 	.draw()
+ * 
+ * TODOs
+ * -----
+ * - streamline setting up of uniforms, textures, attributes
+ */
 class WebGL2Processor {
 	constructor() {
 		this.uniforms = [];
+		this.attributes = [];
+
 		this.init();
-		// get context
-		// compile program
-		// attributes
-		// uniforms
 	}
 
 	init() {
@@ -58,26 +78,43 @@ class WebGL2Processor {
 
 			uniform._location = location;
 			this._uniforms[name] = uniform; // cache
+
+			if (uniform.values.length) this.updateUniform(name, ...uniform.values);
 		});
 	}
 
 	updateUniform(name, ...values) {
 		var { _location, type } = this._uniforms[name];
+		this._uniforms[name].values = values; // copy values
 		var method = `uniform${values.length}${type}`;
 		this.gl[method](_location, ...values);
+	}
+
+	updateTexture(name, image) {
+		var ref = this._uniforms[name];
+		if (ref.values[0] !== undefined) ref.i = ref.values[0];
+		_updateTexture(this.gl, ref, image);
+	}
+
+	updateDataTexture(name, data) {
+		var ref = this._uniforms[name];
+		if (ref.values[0] !== undefined) ref.i = ref.values[0];
+		_updateDataTexture(this.gl, ref, data);
+	}
+
+	defineAttribute(name) {
+		this.attributes.push({ name, _location });
 	}
 
 	setupAttributes() {
 		var program = this.program;
 		var gl = this.gl;
-		// attributes
-		var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
-		var texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
 
 		// Vertex Array Object (attribute state)
 		var vao = gl.createVertexArray();
 		gl.bindVertexArray(vao);
 
+		// attribute { name, _buffer, _location, }
 		var texCoordBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
@@ -88,7 +125,8 @@ class WebGL2Processor {
 			1.0, 0.0,
 			1.0, 1.0
 		]), gl.STATIC_DRAW);
-
+	
+		var texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
 		gl.enableVertexAttribArray(texCoordAttributeLocation);
 		var size = 2;
 		var type = gl.FLOAT;
@@ -102,8 +140,7 @@ class WebGL2Processor {
 		// bind buffer to attribute
 		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-		setRectangle(gl, 0, 0, gl.canvas.width, gl.canvas.height);
-
+		var positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
 		// we want data out of our buffers
 		gl.enableVertexAttribArray(positionAttributeLocation);
 
@@ -117,6 +154,7 @@ class WebGL2Processor {
 			positionAttributeLocation, size, type, normalize, stride, offset
 		);
 
+		setRectangle(gl, 0, 0, gl.canvas.width, gl.canvas.height);
 	}
 
 	draw() {
@@ -137,7 +175,6 @@ class WebGL2Processor {
 		gl.drawArrays(primitiveType, offset, count);
 	}
 }
-
 
 function setRectangle(gl, x, y, width, height) {
 	var x1 = x;
@@ -196,9 +233,21 @@ function createProgram(gl, vertexShader, fragmentShader) {
 	gl.deleteProgram(program);
 }
 
-function updateTexture(state) {
-	var { gl, i, image, texture } = state;
-	bindTexture(state);
+function bindTexture(gl, state) {
+	var { i, _texture } = state; // i is texture slot
+	if (!_texture) {
+		var _texture = gl.createTexture();
+		gl.activeTexture(gl.TEXTURE0 + i);
+		gl.bindTexture(gl.TEXTURE_2D, _texture);
+		state._texture = _texture;
+		return;
+	}
+
+	gl.activeTexture(gl.TEXTURE0 + i);
+}
+
+function _updateTexture(gl, state, image) {
+	bindTexture(gl, state);
 
 	// Set the parameters so we don't need mips and so we're not filtering
 	// and we don't repeat
@@ -215,22 +264,8 @@ function updateTexture(state) {
 	gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, image);
 }
 
-function bindTexture(state) {
-	var { gl, i, data, texture } = state;
-	if (!texture) {
-		var texture = gl.createTexture();
-		gl.activeTexture(gl.TEXTURE0 + i);
-		gl.bindTexture(gl.TEXTURE_2D, texture);
-		state.texture = texture;
-		return;
-	}
-
-	gl.activeTexture(gl.TEXTURE0 + i);
-}
-
-function updateDataTexture(state) {
-	var { gl, i, data, texture } = state;
-	bindTexture(state);
+function _updateDataTexture(gl, state, data) {
+	bindTexture(gl, state);
 
 //   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 //   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, options.filter || options.magFilter || gl.LINEAR);

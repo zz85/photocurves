@@ -1,4 +1,4 @@
-var gl, program, sliderValue = 0;
+var glProcessor, program, sliderValue = 0;
 
 function init() {
 	// follow this! https://webgl2fundamentals.org/webgl/lessons/webgl-fundamentals.html
@@ -7,7 +7,6 @@ function init() {
 
 	glProcessor = new WebGL2Processor();
 	canvas = glProcessor.canvas;
-	gl = glProcessor.gl;
 
 	canvas.onmousemove = (e) => {
 		var t = e.offsetX  / canvas.width;
@@ -21,7 +20,6 @@ function init() {
 	document.body.appendChild(canvas);
 
 	var image = new Image();
-	imageTexture = { gl, i: 0, image }
 	render();
 
 	image.src = "img/Lenna.png";
@@ -29,8 +27,7 @@ function init() {
 		canvas.width = image.width;
 		canvas.height = image.height;
 
-		imageTexture.image = image;
-		updateTexture(imageTexture);
+		glProcessor.updateTexture('u_image', image);
 		drawScene();
 	}
 }
@@ -116,11 +113,7 @@ function render() {
 	fillData1();
 	console.log('data', data.length);
 
-	curveTexture = {
-		gl, i: 1, data
-	}
-
-	updateDataTexture(curveTexture);
+	glProcessor.updateDataTexture('u_curve', data);
 
 	drawScene();
 }
@@ -149,7 +142,7 @@ function fillData2() {
 
 function updateUniforms() {
 	// update uniforms
-	glProcessor.updateUniform('u_resolution', gl.canvas.width, gl.canvas.height);
+	glProcessor.updateUniform('u_resolution', glProcessor.canvas.width, glProcessor.canvas.height);
 	glProcessor.updateUniform('u_slider', sliderValue);
 	glProcessor.updateUniform('u_image', 0);
 	glProcessor.updateUniform('u_curve', 1);
