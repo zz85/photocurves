@@ -30,7 +30,7 @@ function setupCurveProcessor() {
 	`;
 
 	var fragmentShaderSource = `#version 300 es
-	precision mediump float;
+	precision highp float;
 
 	// our texture
 	uniform sampler2D u_image;
@@ -45,12 +45,19 @@ function setupCurveProcessor() {
 
 	void main() {
 		vec4 source = texture(u_image, v_texCoord);
-		float curve = texture(u_curve, vec2(
-			(source.x + source.y + source.z) / 3.
-				, 0.5)).x;
+		// float lum = (source.x + source.y + source.z) / 3.;
+		vec3 curved = vec3(
+			texture(u_curve, vec2(source.r, 0.5)).r,
+			texture(u_curve, vec2(source.g, 0.5)).g,
+			texture(u_curve, vec2(source.b, 0.5)).b
+		);
 
 		// rgba.rgb *= 1. + (u_slider-0.5) * 2.;
-		outColor = vec4(vec3(curve), 1.0);
+		outColor = vec4(vec3(curved), source.a);
+
+		// debugging
+		// outColor = vec4(source.rgb, source.a);
+		// outColor = texture(u_curve, v_texCoord);
 	}
 	`;
 
@@ -79,7 +86,7 @@ function setupCurveProcessor() {
 
 function fillData() {
 	for (var i = 0; i < 256; i++) {
-		var t = i / 256;
+		var t = i / 255;
 		t = t * t; // push
 		data[i * 4 + 0] = t;
 		data[i * 4 + 1] = t;
@@ -90,7 +97,7 @@ function fillData() {
 
 function fillCurveData() {
 	for (var i = 0; i < 256; i++) {
-		var t = t = curve(i / 256);
+		var t = t = curve(i / 255);
 		data[i * 4 + 0] = t;
 		data[i * 4 + 1] = t;
 		data[i * 4 + 2] = t;
