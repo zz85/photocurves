@@ -1,7 +1,5 @@
 const clamp = (v, min, max) => Math.min(Math.max(min, v), max);
 
-
-
 /**
  * Graphic classes
  */
@@ -18,10 +16,10 @@ class GridArea {
 		this.endMarker = new MarkerBoxElement(1, 1);
 
 		this.startMarker.clamped = true;
+		this.endMarker.clamped = true;
 
 		this.points = [
-			this.startMarker,
-			this.endMarker
+
 		]
 
 		this.helper = new MarkerBoxElement(0.5, 0.5)
@@ -29,6 +27,8 @@ class GridArea {
 		this.children = [
 			// new CurveElement(x => x * x),
 			new CurveElement(curve),
+			this.startMarker,
+			this.endMarker,
 			...this.points,
 			// this.helper
 		];
@@ -38,7 +38,8 @@ class GridArea {
 	}
 
 	notifyPoints() {
-		notify('POINTS_UPDATED', this.points);
+		notify('POINTS_UPDATED', [this.startMarker,...this.points, this.endMarker]);
+		// notify('POINTS_UPDATED', this.points);
 	}
 
 	isIn(ctx, x, y) {
