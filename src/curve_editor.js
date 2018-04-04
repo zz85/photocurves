@@ -386,7 +386,9 @@ class CanvasElement {
 			this.forIn(this, (child, cx, cy) => {
 				if (child.isIn) {
 					if (child.isIn(this.ctx, x - cx, y - cy)) {
-						child.mousedown && child.mousedown(x, y, x - cx, y - cy);
+						child.mousedown && child.mousedown(x, y, x - cx, y - cy)
+						// only allow one child event to receive click
+						return true;
 					};
 				}
 			})
@@ -402,7 +404,6 @@ class CanvasElement {
 						return child.dblclick(x, y, x - cx, y - cy);
 				}
 			})
-			
 		})
 
 		this.children = children || [];
