@@ -2,7 +2,9 @@ let points;
 let ys = [], xs = [], ks = [];
 
 function process_points(_points) {
-    points = _points.map(p => ({ x: p.t, y: p.v }));
+    points = _points
+        .map(p => ({ x: p.t, y: p.v }))
+        .filter(p => p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1);
 
     xs = points.map(p => p.x)
     ys = points.map(p => p.y)

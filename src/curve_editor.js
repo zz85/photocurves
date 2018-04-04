@@ -13,9 +13,15 @@ class GridArea {
 		this.width = 100;
 		this.height = 100;
 
+		// the special ones
+		this.startMarker = new MarkerBoxElement(0, 0);
+		this.endMarker = new MarkerBoxElement(1, 1);
+
+		this.startMarker.clamped = true;
+
 		this.points = [
-			new MarkerBoxElement(0, 0),
-			new MarkerBoxElement(1, 1)
+			this.startMarker,
+			this.endMarker
 		]
 
 		this.helper = new MarkerBoxElement(0.5, 0.5)
@@ -49,16 +55,33 @@ class GridArea {
 		}
 
 		if (type === 'REMOVE_POINT') {
-			const i = this.points.indexOf(point);
-			if (i > 0 && i < this.points.length - 1) {
-				this.points.splice(i, 1);
-				this.children.splice(this.children.indexOf(point), 1);
-				this.pos();
+			this.removePoint(point);
+			return;
+		}
+
+		if (type === 'POINTS_STOPPED') {
+			console.log('point', point);
+			if (point.t > 1 || point.t < 0 || point.v > 1 || point.v < 0) {
+				console.log('REMOVE')
+				this.removePoint(point);
+				this.notifyPoints();
 			}
 			return;
 		}
 
 		if (type !== 'POINTS_MOVING' && type !== 'POINTS_STOPPED') return;
+		this.pos();
+	}
+
+	removePoint(point) {
+		if (point === this.startMarker || point === this.endMarker) {
+			// you can't rememove them!
+			return;
+		}
+		const i = this.points.indexOf(point);
+		
+		this.points.splice(i, 1);
+		this.children.splice(this.children.indexOf(point), 1);
 		this.pos();
 	}
 
@@ -123,7 +146,7 @@ class MarkerBoxElement {
 	constructor(t, v) {
 		this.t = t;
 		this.v = v;
-		this.w = 8;
+		this.w = 11;
 
 		this.resize(200, 200);
 	}
@@ -180,8 +203,14 @@ class MarkerBoxElement {
 			const tx = (e.offsetX - this.downx) + this.ox;
 			const ty = (e.offsetY - this.downy) + this.oy;
 
-			this.t = clamp(tx / this.width, 0, 1);
-			this.v = clamp(1 - (ty / this.height), 0, 1);
+			this.t = tx / this.width;
+			this.v = 1 - (ty / this.height);
+
+			if (this.clamped) {
+				this.t = clamp(this.t, 0, 1);
+				this.v = clamp(this.v, 0, 1);
+			}
+
 			this.pos();
 			notify('POINTS_MOVING');
 		}
@@ -189,7 +218,7 @@ class MarkerBoxElement {
 		const mouseup = () => {
 			document.body.removeEventListener('mousemove', mousemove)
 			document.body.removeEventListener('mouseup', mouseup)
-			notify('POINTS_STOPPED');
+			notify('POINTS_STOPPED', this);
 		}
 
 		document.body.addEventListener('mousemove', mousemove)
