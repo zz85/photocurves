@@ -19,7 +19,7 @@ class GridArea {
 		this.endMarker.clamped = true;
 
 		this.points = [
-
+			this.startMarker, this.endMarker
 		]
 
 		this.helper = new MarkerBoxElement(0.5, 0.5)
@@ -27,8 +27,8 @@ class GridArea {
 		this.children = [
 			// new CurveElement(x => x * x),
 			new CurveElement(curve),
-			this.startMarker,
-			this.endMarker,
+			// this.startMarker,
+			// this.endMarker,
 			...this.points,
 			// this.helper
 		];
@@ -38,8 +38,8 @@ class GridArea {
 	}
 
 	notifyPoints() {
-		notify('POINTS_UPDATED', [this.startMarker,...this.points, this.endMarker]);
-		// notify('POINTS_UPDATED', this.points);
+		// notify('POINTS_UPDATED', [this.startMarker,...this.points, this.endMarker]);
+		notify('POINTS_UPDATED', this.points);
 	}
 
 	isIn(ctx, x, y) {
@@ -92,6 +92,31 @@ class GridArea {
 			if (a.t < b.t) return -1;
 			return 0;
 		});
+
+		if (this.points.length > 2) {
+			// possible to change start/end markers
+			this.startMarker.clamped = false;
+			this.endMarker.clamped = false;
+
+			for (var i = 0; i < this.points.length; i++) {
+				var point = this.points[i];
+				if (point.t >= 0) {
+					this.startMarker = point;
+					break;
+				}
+			}
+
+			for (var i = this.points.length - 1; i > 0; i--) {
+				var point = this.points[i];
+				if (point.t <= 1) {
+					this.endMarker = point;
+					break;
+				}
+			}
+
+			this.startMarker.clamped = true;
+			this.endMarker.clamped = true;
+		}
 
 		this.notifyPoints();
 	}
