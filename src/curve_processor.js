@@ -43,17 +43,25 @@ function setupCurveProcessor() {
 	// the texCoords passed in from the vertex shader.
 	in vec2 v_texCoord;
 
+	float curve_map(float value, int channel) {
+		return texture(u_curve, vec2(value, 0.5))[channel];
+	}
+
+	float curve_map(float value) {
+		return curve_map(value, 0);
+	}
+
 	void main() {
 		vec4 source = texture(u_image, v_texCoord);
 		// float lum = (source.x + source.y + source.z) / 3.;
 		vec3 curved = vec3(
-			texture(u_curve, vec2(source.r, 0.5)).r,
-			texture(u_curve, vec2(source.g, 0.5)).g,
-			texture(u_curve, vec2(source.b, 0.5)).b
+			curve_map(source.r),
+			curve_map(source.g),
+			curve_map(source.b)
 		);
 
 		// rgba.rgb *= 1. + (u_slider-0.5) * 2.;
-		outColor = vec4(vec3(curved), source.a);
+		outColor = vec4(curved, source.a);
 
 		// debugging
 		// outColor = vec4(source.rgb, source.a);
