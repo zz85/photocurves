@@ -48,7 +48,7 @@ function setupCurveProcessor() {
 	}
 
 	float curve_map(float value) {
-		return curve_map(value, 0);
+		return curve_map(value, 3);
 	}
 
 	void main() {
@@ -73,11 +73,11 @@ function setupCurveProcessor() {
 
 	// uniforms
 	glProcessor.defineUniform('u_resolution', 'f', glProcessor.canvas.width, glProcessor.canvas.height);
-	glProcessor.defineUniform('u_slider', 'f', 0);
-	glProcessor.defineUniform('u_curve', 'i', 1); // textures
-	glProcessor.defineUniform('u_image', 'i', 0);
+	glProcessor.defineUniform('u_image', 'i', 0); // textures
+	glProcessor.defineUniform('u_curve', 'i', 1);
+	// glProcessor.defineUniform('u_slider', 'f', 0);
+	
 	glProcessor.lookupUniforms();
-
 	glProcessor.setupAttributes();
 
 	// Tell the shader to get the texture from texture unit 0
@@ -99,7 +99,7 @@ function fillData() {
 		data[i * 4 + 0] = t;
 		data[i * 4 + 1] = t;
 		data[i * 4 + 2] = t;
-		data[i * 4 + 3] = 1;
+		data[i * 4 + 3] = t;
 	}
 }
 
@@ -109,7 +109,7 @@ function fillCurveData() {
 		data[i * 4 + 0] = t;
 		data[i * 4 + 1] = t;
 		data[i * 4 + 2] = t;
-		data[i * 4 + 3] = 1;
+		data[i * 4 + 3] = t;
 	}
 
 	glProcessor.updateDataTexture('u_curve', data);

@@ -1,41 +1,6 @@
 const clamp = (v, min, max) => Math.min(Math.max(min, v), max);
 
-/**
- * Event / Data management
- */
 
-const notify = (action, ...params) => {
-	listeners.forEach(listener => {
-		listener.notify && listener.notify(action, ...params);
-	})
-}
-const listeners = new Set;
-
-const register = (target) => {
-	listeners.add(target);
-}
-
-/**
- * Linear Curve Interpolation
- */
-
-function linearCurve(t, points) {
-	const find_index = points.findIndex((point) => {
-		return point.t > t;
-	});
-
-	const last_point = find_index > -1 ?
-		find_index < 1 ? 1 :
-			find_index : points.length - 1;
-
-	const first = points[last_point - 1];
-	const last = points[last_point];
-
-	if (t < first.t) { return first.v };
-	if (t > last.t) { return last.v };
-
-	return (t - first.t) / (last.t - first.t) * (last.v - first.v) + first.v;
-}
 
 /**
  * Graphic classes
@@ -63,6 +28,10 @@ class GridArea {
 		];
 
 		register(this);
+		this.notifyPoints();
+	}
+
+	notifyPoints() {
 		notify('POINTS_UPDATED', this.points);
 	}
 
@@ -75,7 +44,7 @@ class GridArea {
 			this.helper.t = point;
 			this.helper.v = curve(point);
 			this.helper.pos();
-			notify('POINTS_UPDATED', this.points) 
+			this.notifyPoints();
 			return;
 		}
 
@@ -100,7 +69,7 @@ class GridArea {
 			return 0;
 		});
 
-		notify('POINTS_UPDATED', this.points);
+		this.notifyPoints();
 	}
 
 	mousedown(x, y, a, b) { // dblclick

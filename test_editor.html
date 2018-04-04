@@ -1,0 +1,34 @@
+<html>
+	<body>
+            <script src="src/spline.js"></script>
+            <script src="src/event.js"></script>
+            
+            <script src="src/curve.js"></script>
+            <script src="src/curve_editor.js"></script>
+            <script src="src/image_opener.js"></script>
+            <script src="src/webgl2processor.js"></script>
+            <script src="src/curve_processor.js"></script>
+
+        <script>
+            editor = new CanvasElement(
+                380, 380,
+                new Editor(380, 380)
+            );
+
+            register({
+                notify(type, _points) {
+                    if (type !== 'POINTS_UPDATED' || !_points) return
+
+                    console.log(`Received event [${type}]`, points)
+                    process_points(_points);
+                }
+            })
+
+            dom(editor.canvas);
+
+            setInterval(() => {
+                editor._draw()
+            })
+        </script>
+	</body>
+</html>

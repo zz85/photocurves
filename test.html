@@ -1,121 +1,16 @@
 <html>
 	<body>
-		<script src="src/curve_editor.js"></script>
 		<script src="src/spline.js"></script>
+
+
+		<script src="src/event.js"></script>
+		
+		<script src="src/curve.js"></script>
+		<script src="src/curve_editor.js"></script>
 		<script src="src/image_opener.js"></script>
 		<script src="src/webgl2processor.js"></script>
 		<script src="src/curve_processor.js"></script>
 
-		<script>
-			/**
-				Events
-					POINTS_MOVING: from Box
-					POINTS_STOPPED: from Box
-					POINTS_UPDATED(points): from Grid, from Box(removal) to redraw
-					REDRAW - trigger rerender (not used)
-			*/
-			let points;
-			let editor, mapper, photo;
-			let ys = [], xs = [], ks = [];
-
-			const glProcessor = setupCurveProcessor();
-
-			register({
-				notify(type, _points) {
-					// console.log(`Received event [${type}]`, points)
-					if (type === 'REDRAW') {
-						console.log('zzzz')
-						photo && photo._draw();
-						return
-					}
-					if (type !== 'POINTS_UPDATED' || !_points) return
-
-					points = _points;
-					xs = points.map(p => p.t)
-					ys = points.map(p => p.v)
-					ks = points.concat();
-
-					CSPL.getNaturalKs(xs, ys, ks);
-					
-					editor && editor._draw()
-					mapper && mapper._draw()
-					photo && photo._draw();
-
-					fillCurveData()
-					glProcessor.draw();
-					// TODO save / export points
-				}
-			})
-
-			// GLOBAL curve
-			const curve = (t) => {
-				if (t <= points[0].t) return points[0].v;
-				if (t >= points[points.length-1].t) return points[points.length-1].v;
-
-				return clamp(CSPL.evalSpline(t, xs, ys, ks), 0, 1)
-				// CSPL.evalSpline(t, xs, ys, ks)
-				// linearCurve(t, points);
-
-			}
-				
-			editor = new CanvasElement(
-				380, 380,
-				new Editor(380, 380)
-			);
-
-			mapper = new CanvasElement(60, 380,
-				new MapElement(60, 380));
-
-			const img = 
-				'img/Lenna.png'
-				// 'https://mdn.mozillademos.org/files/5397/rhino.jpg'
-				// 'img/rhino.jpg'
-				// 'img/climbing.jpg'
-
-			photo_holder = new ImageElement(img)
-
-			photo = new CanvasElement(
-				700, 880,
-				photo_holder
-			);
-
-			const open_callback = (result) => {
-				// photo_holder.load(result);
-
-				imageToData(result, (data, img) => {
-					// console.log('data---', data);
-					glProcessor.updateTexture('u_image', img);
-					glProcessor.canvas.width = img.width;
-					glProcessor.canvas.height = img.height;
-					glProcessor.draw();
-				})
-			}
-			const open_input = opener(open_callback);
-
-			const button = add_opener(open_callback);
-			// photo_holder.load.bind(photo_holder)
-			// handle_drop(document.body, photo_holder.load.bind(photo_holder))
-			// document.body.appendChild(open_input);
-
-			const dom = (children) => {
-				children.forEach(c => {
-					if (typeof c === 'string') {
-						c = document.createElement(c);
-					}
-					document.body.appendChild(c);
-				})
-			};
-
-			dom(
-				[
-					button,
-					'br',
-					editor.canvas,
-					mapper.canvas,
-					photo.canvas,
-					glProcessor.canvas
-				]
-			)
-		</script>
+		<script src="src/test_bed_main.js"></script>
 	</body>
 </html>
