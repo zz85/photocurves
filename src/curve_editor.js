@@ -14,11 +14,11 @@ class GridArea {
 		this.height = 100;
 
 		this.points = [
-			new BoxElement(0, 0),
-			new BoxElement(1, 1)
+			new MarkerBoxElement(0, 0),
+			new MarkerBoxElement(1, 1)
 		]
 
-		this.helper = new BoxElement(0.5, 0.5)
+		this.helper = new MarkerBoxElement(0.5, 0.5)
 
 		this.children = [
 			// new CurveElement(x => x * x),
@@ -73,10 +73,12 @@ class GridArea {
 	}
 
 	mousedown(x, y, a, b) { // dblclick
-		const box = new BoxElement(a / this.width, 1 - b / this.height);
+		const box = new MarkerBoxElement(a / this.width, 1 - b / this.height);
 		this.children.push(box);
 		this.points.push(box);
 		box.resize(this.width, this.height);
+
+		box.mousedown(x, y);
 		notify('POINTS_MOVING');
 	}
 
@@ -117,7 +119,7 @@ class GridArea {
 	}
 }
 
-class BoxElement {
+class MarkerBoxElement {
 	constructor(t, v) {
 		this.t = t;
 		this.v = v;
