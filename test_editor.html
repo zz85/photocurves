@@ -13,8 +13,14 @@
             #moo {
                 stroke: red;
             }
+
+            circle:hover {
+                fill: red;
+                stroke: red;
+                cursor: move;
+                // pointer move progress crosshair
+            }
         </style>
-        <script src="src/svg_editor.js"></script>
 
         <script>
             editor = new CanvasElement(
@@ -37,5 +43,7 @@
                 editor._draw()
             })
         </script>
+        <!-- SVG clone -->
+        <script src="src/svg_editor.js"></script>
 	</body>
 </html>
