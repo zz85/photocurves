@@ -18,8 +18,10 @@ function SvgEditor() {
     return svg;
 }
 
+var circles;
 svg = SvgEditor();
 nest(document.body, [ svg ]);
+
 
 function svgEl(element, attrs) {
     var el = document.createElementNS('http://www.w3.org/2000/svg', element);
@@ -72,27 +74,44 @@ register({
         
         process_points(_points);
         console.log(`Received event [${type}]`, _points)
+
         updatePoints(_points);
     }
 })
 
 function updatePoints(_points) {
-    ;[...g.children].forEach(child => child.remove());
+    // ;[...g.children].forEach(child => child.remove());
+    var size = 300;
+ 
+    var pointAttrs = _points.map(point => ({
+        cx: point.x,
+        cy: point.y,
+        r: 15,
+        fill: '#333',
+        class: 'circle'
+    }));
 
-    // apply update, add, remove life cycle?
-    circles = _points.map(point => {
-        return svgEl('circle', {
-            cx: point.x,
-            cy: point.y,
-            r: 15,
-            fill: '#333',
-            class: 'circle'
+    var pathAttr = {
+        d: 'M' + Array(100).fill().map((_, i) => `${i / 99 * size} ${( 1- curve(i / 99))* size}`).join(', '),
+        fill: 'transparent',
+        stroke: 'purple',
+        'stroke-width': 4
+    };
+
+    if (circles && circles.length === _points.length) {
+        pointAttrs.map((attr, i) => {
+            return setAttr(circles[i], attr);
         })
+
+        setAttr(p, pathAttr);
+        return;
+    }
+    // apply update, add, remove life cycle?
+    circles = pointAttrs.map(attr => {
+        return svgEl('circle', attr)
     })
 
     circles.forEach(circle => attachDrag(circle))
-
-    var size = 300;
 
     var box = svgEl('rect', {
         x: 0,
@@ -103,12 +122,7 @@ function updatePoints(_points) {
         stroke: '#000'
     })
 
-    var p = svgEl('path', {
-        d: 'M' + Array(100).fill().map((_, i) => `${i / 99 * size} ${( 1- curve(i / 99))* size}`).join(', '),
-        fill: 'transparent',
-        stroke: 'purple',
-        'stroke-width': 4
-    })
+    p = svgEl('path', pathAttr)
 
     p.onmousemove = (e) => {
         console.log('mouse over!', e);
