@@ -33,6 +33,7 @@
             leftpane {
                 width: 200px;
                 transition: all 250ms ease-out;
+                min-width: 100px;
             }
 
             filmstrip {
@@ -61,13 +62,22 @@
                 background: grey;
                 cursor: pointer;
             }
+
+            widget {
+                width: 100%;
+                height: 300px;
+                background: orange;
+                display: block;
+            }
         </style>
 
 
 
         <app class="box">
             <top class="box">
-                <leftpane class="box"></leftpane>
+                <leftpane class="box">
+                    <widget></widget>
+                </leftpane>
                 <hdivider>
                     <marker></marker>
                 </hdivider>
@@ -82,6 +92,16 @@
             hd = document.querySelector('hdivider')
             lp = document.querySelector('leftpane')
             marker = document.querySelector('marker')
+
+            ro = new ResizeObserver(changed => {
+                // cool stuff https://developers.google.com/web/updates/2016/10/resizeobserver
+                changed.forEach(entry => {
+                    console.log(entry.contentRect)
+                    entry.target.style.height = entry.contentRect.width + 'px'
+                })  
+            })
+
+            ro.observe(document.querySelector('widget'))
             
             vd.addEventListener('mousedown', handleVDrag)
             hd.addEventListener('mousedown', handleHDrag)
