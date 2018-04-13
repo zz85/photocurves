@@ -71,8 +71,6 @@
             }
         </style>
 
-
-
         <app class="box">
             <top class="box">
                 <leftpane class="box">
@@ -159,12 +157,24 @@
 
 
 <!--
-    other libs:
-    https://nathancahill.github.io/Split.js/
-    http://interactjs.io/
-    https://yansern.github.io/vue-multipane/demo/index.html
-    http://www.monkeyandcrow.com/blog/css3_splitview/
- -->
+    split([#1, #2, #3], {dir: })
+
+    <splitview dir="h" grow="moo" constrain="cow">
+        or
+    
+    v [#1 || #2-grow]
+    h [#2 || #3-grow]
+    
+    // custom elements?
+
+    <vsplitview top="" bottom="">
+        <hsplitview></hsplitview>
+    </vsplitview>
+
+    <borderlayout>
+        <n><s><e><w><c>
+    </borderlayou>
+-->
 
 	</body>
 </html>
