@@ -61,16 +61,31 @@
                 background: grey;
                 cursor: pointer;
             }
+
+            widget {
+                width: 300px;
+                height: 300px;
+                background: orange;
+                display: block;
+            }
+
+            floatpane {
+                float: left;
+                display: block;
+                height: 400px;
+                position: absolute;
+            }
         </style>
 
 
 
         <app class="box">
             <top class="box">
-                <leftpane class="box"></leftpane>
-                <hdivider>
-                    <marker></marker>
-                </hdivider>
+                <floatpane>
+                    <widget>
+
+                    </widget>
+                </floatpane>
                 <canvasarea class="box"></canvasarea>
             </top>
             <vdivider class="box"></vdivider>
@@ -79,16 +94,10 @@
         <script>
             fs = document.querySelector('filmstrip')
             vd = document.querySelector('vdivider')
-            hd = document.querySelector('hdivider')
             lp = document.querySelector('leftpane')
             marker = document.querySelector('marker')
             
             vd.addEventListener('mousedown', handleVDrag)
-            hd.addEventListener('mousedown', handleHDrag)
-
-            marker.addEventListener('click', () => {
-                updateLeftPane(0);
-            })
 
             function handleHDrag(event) {
                 var constrain = lp.clientWidth;
