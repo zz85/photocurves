@@ -1,0 +1,134 @@
+<html>
+	<body>
+        <style>
+            body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+            }
+            .box {
+                border: 1px solid black;
+            }
+
+            app {
+                width: 100%;
+                height: 100%;
+                background: #ddd;
+                display: flex;
+                flex-direction: column;
+            }
+
+            top {
+                flex: 1 0;
+                background: pink;
+                display: flex;
+            }
+
+            canvasarea {
+                flex: 1 0;
+                background: blue;
+            }
+
+            leftpane {
+                width: 200px;
+            }
+
+            filmstrip {
+                height: 100px;
+                background: red;
+            }
+
+            vdivider {
+                height: 4px;
+                background: #ddd;
+                cursor: row-resize;
+            }
+
+            hdivider {
+                width: 4px;
+                cursor: col-resize;
+            }
+        </style>
+
+
+
+        <app class="box">
+            <top class="box">
+                <leftpane class="box"></leftpane>
+                <hdivider></hdivider>
+                <canvasarea class="box"></canvasarea>
+            </top>
+            <vdivider class="box"></vdivider>
+            <filmstrip class="box"></filmstrip>
+        </app>
+        <script>
+            fs = document.querySelector('filmstrip')
+            vd = document.querySelector('vdivider')
+            hd = document.querySelector('hdivider')
+            lp = document.querySelector('leftpane')
+            
+            
+            vd.addEventListener('mousedown', handleVDrag)
+            hd.addEventListener('mousedown', handleHDrag)
+
+            function handleHDrag(event) {
+                var constrain = lp.clientWidth;
+                var x = event.clientX;
+                document.addEventListener('mousemove', mousemove)
+                document.addEventListener('mouseup', mouseup)
+
+                function mousemove(e) {
+                    lp.style.width = updateLeftPane(constrain + e.clientX - x);
+                }
+
+                function mouseup() {
+                    document.removeEventListener('mousemove', mousemove);
+                    document.removeEventListener('mouseup', mouseup)
+                }
+            }
+
+            function handleVDrag(event) {
+                var ch = fs.clientHeight;
+                var x = event.clientX;
+                var y = event.clientY;
+                document.addEventListener('mousemove', mousemove)
+                document.addEventListener('mouseup', mouseup)
+                document.addEventListener('dragleave', (e) => {
+                    console.log('mouseout', e.target)
+                })
+
+                function mousemove(e) {
+                    fs.style.height = updateFilmStripHeight(ch + y - e.clientY);
+                }
+
+                function mouseup() {
+                    document.removeEventListener('mousemove', mousemove);
+                    document.removeEventListener('mouseup', mouseup)
+                }
+            }
+
+            function updateFilmStripHeight(height) {
+                sessionStorage.setItem('fs-height', height);
+                fs.style.height = height + 'px';
+            }
+
+            function updateLeftPane(width) {
+                lp.style.width = width + 'px';
+            }
+
+            var height = sessionStorage.getItem('fs-height');
+            if (height) updateFilmStripHeight(height);
+        </script>
+
+
+<!--
+    other libs:
+    https://nathancahill.github.io/Split.js/
+    http://interactjs.io/
+    https://yansern.github.io/vue-multipane/demo/index.html
+    http://www.monkeyandcrow.com/blog/css3_splitview/
+ -->
+
+	</body>
+</html>
