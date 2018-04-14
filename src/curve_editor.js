@@ -399,8 +399,6 @@ ctx.fillRect(20, 10, 10, 10);
 
 class CanvasElement {
 	constructor(width, height, ...children) {
-		this.width = width;
-		this.height = height;
 		const canvas = document.createElement('canvas');
 
 		this.ctx = canvas.getContext('2d');
@@ -465,8 +463,20 @@ class CanvasElement {
 
 		this.children = children || [];
 
-		this.resize();
+		this.setSize(width, height);
+		// this.resize();
 		this._draw();
+	}
+
+	setSize(width, height) {
+		this.width = width;
+		this.height = height;
+
+		this.forEach(this, (e) => {
+			e.setSize && e.setSize(width, height);
+		})
+
+		this.resize()
 	}
 
 	resize() {
@@ -555,10 +565,9 @@ class GradientStrip {
 
 class Editor {
 	constructor(width, height) {
-		this.width = width;
-		this.height = height;
 		this.gridArea = new GridArea(40, 40);
 		this.vstrip = new GradientStrip();
+		this.setSize(width, height);
 
 		// padding - stripWidth, padding, stripWidth, histoHeight
 
@@ -566,6 +575,11 @@ class Editor {
 			this.vstrip,
 			this.gridArea,
 		];
+	}
+
+	setSize(width, height) {
+		this.width = width;
+		this.height = height;
 	}
 
 	draw(ctx) {

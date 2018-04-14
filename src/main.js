@@ -25,57 +25,32 @@ function makeDrag(divider, target, order) {
     }
 }
 
-function layout() {
-    var el = createEl('box', {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        background: '#303030'
-    });
+function makeHeightDraggable(divider, target, order) {
+    order = order || 1;
+    divider.addEventListener('mousedown', handleHDrag)
 
-    var leftPane = createEl('box', {
-        width: '250px',
-        // flex: '1 1',
-        border: '1px solid white'
-    });
+    function handleHDrag(event) {
+        var constrain = target.clientHeight;
+        var y = event.clientY;
+        document.addEventListener('mousemove', mousemove)
+        document.addEventListener('mouseup', mouseup)
+        event.preventDefault();
 
-    var divider = createEl('box', {
-        cursor: 'ew-resize',
-        width: '5px',
-        background: 'white'
-    });
+        function mousemove(e) {
+            updateTarget(constrain + (e.clientY - y) * order);
+        }
 
-    var centerPane = createEl('box', {
-        flex: '1 1',
-        background: '#ddd'
-    });
+        function mouseup() {
+            document.removeEventListener('mousemove', mousemove);
+            document.removeEventListener('mouseup', mouseup)
+        }
+    }
 
-    var rightDivider = createEl('box', {
-        cursor: 'ew-resize',
-        width: '5px',
-        background: 'white'
-    });
-
-    var rightPane = createEl('box', {
-        width: '300px',
-        background: 'orange'
-    })
-
-    makeDrag(divider, leftPane);
-    makeDrag(rightDivider, rightPane, -1);
-
-    return nest(
-        el, [
-            leftPane,
-            divider,
-            centerPane,
-
-            rightDivider,
-            rightPane
-        ]
-    );
+    function updateTarget(height) {
+        // TODO save to session/localstorage
+        target.style.height = height + 'px'
+    }
 }
-
 
 function createEl(element, style) {
     var el = document.createElement(element);
@@ -92,8 +67,12 @@ function setStyle(node, props) {
     }
 }
 
-var layouted = layout();
-dom([ layouted ])
+setStyle(document.body, {
+    background: '#303030',
+    padding: 0,
+    margin: '0',
+
+})
 
 /**
 	Events
@@ -168,13 +147,92 @@ const button = add_opener(open_callback);
 // handle_drop(document.body, photo_holder.load.bind(photo_holder))
 // document.body.appendChild(open_input);
 
-dom(
-	[
-		button,
-		'br',
-		editor.canvas,
-		mapper.canvas,
-		photo.canvas,
-		glProcessor.canvas
-	]
-)
+// dom(
+// 	[
+// 		button,
+// 		'br',
+// 		editor.canvas,
+// 		mapper.canvas,
+// 		photo.canvas,
+// 		glProcessor.canvas
+// 	]
+// )
+
+
+function layout() {
+    var vbox = createEl('box', {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        'flex-direction': 'column',
+        background: '#303030',
+        border: '1px solid white'
+    });
+
+    var top = createEl('box', {
+        height: '40px',
+        display: 'flex',
+        'font-size': '20px',
+        color: '#ddd',
+        padding: '4px',
+        'text-align': 'center',
+        background: '#101010'
+    });
+
+    top.innerHTML = 'PhotoCurves'
+
+    var hbox = createEl('box', {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        background: '#303030',
+    });
+
+    var leftPane = createEl('box', {
+        width: '250px',
+        overflow: 'auto'
+        // flex: '1 1',
+    });
+
+    var divider = createEl('box', {
+        cursor: 'ew-resize',
+        width: '5px',
+        background: 'white'
+    });
+
+    var centerPane = createEl('box', {
+        flex: '1 1',
+        background: '#ddd',
+        overflow: 'auto'
+    });
+
+    makeDrag(divider, leftPane);
+
+    var hboxDom = nest(
+        hbox, [
+            nest(leftPane, [ editor.canvas ]),
+            divider,
+            nest(centerPane, [ glProcessor.canvas] )
+        ]
+    )
+
+    var vboxDom = nest(
+        vbox, [
+            nest(top, [button]),
+            hboxDom
+        ]
+    )
+
+    var ro = new ResizeObserver(els => els.forEach(element => {
+        var w = element.contentRect.width;
+        editor.setSize(w, w);
+        editor._draw();
+    }))
+
+    ro.observe(leftPane);
+
+    return vboxDom;
+}
+
+var layouted = layout();
+dom([ layouted ])
