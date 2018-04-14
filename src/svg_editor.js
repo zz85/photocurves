@@ -38,12 +38,6 @@ function setAttr(node, props) {
     }
 }
 
-function nest(node, children) {
-    children.forEach(child => node.appendChild(child));
-
-    return node;
-}
-
 function attachDrag(node) {
     node.onmousedown = () => {
         const move = (e) => {

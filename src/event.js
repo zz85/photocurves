@@ -33,3 +33,9 @@ const dom = (children) => {
 		document.body.appendChild(c);
 	})
 };
+
+function nest(node, children) {
+    children.forEach(child => node.appendChild(child));
+
+    return node;
+}
