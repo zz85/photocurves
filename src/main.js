@@ -1,4 +1,31 @@
-function hsplit() {
+function makeDrag(divider, target, order) {
+    order = order || 1;
+    divider.addEventListener('mousedown', handleHDrag)
+
+    function handleHDrag(event) {
+        var constrain = target.clientWidth;
+        var x = event.clientX;
+        document.addEventListener('mousemove', mousemove)
+        document.addEventListener('mouseup', mouseup)
+        event.preventDefault();
+
+        function mousemove(e) {
+            updateTarget(constrain + (e.clientX - x) * order);
+        }
+
+        function mouseup() {
+            document.removeEventListener('mousemove', mousemove);
+            document.removeEventListener('mouseup', mouseup)
+        }
+    }
+
+    function updateTarget(width) {
+        // TODO save to session/localstorage
+        target.style.width = width + 'px'
+    }
+}
+
+function layout() {
     var el = createEl('box', {
         width: '100%',
         height: '100%',
@@ -18,15 +45,32 @@ function hsplit() {
         background: 'white'
     });
 
-    var rightPane = createEl('box', {
+    var centerPane = createEl('box', {
         flex: '1 1',
         background: '#ddd'
+    });
+
+    var rightDivider = createEl('box', {
+        cursor: 'ew-resize',
+        width: '5px',
+        background: 'white'
+    });
+
+    var rightPane = createEl('box', {
+        width: '300px',
+        background: 'orange'
     })
+
+    makeDrag(divider, leftPane);
+    makeDrag(rightDivider, rightPane, -1);
 
     return nest(
         el, [
             leftPane,
             divider,
+            centerPane,
+
+            rightDivider,
             rightPane
         ]
     );
@@ -48,9 +92,8 @@ function setStyle(node, props) {
     }
 }
 
-var hsplited = hsplit();
-console.log(hsplited);
-dom([ hsplited ])
+var layouted = layout();
+dom([ layouted ])
 
 /**
 	Events
