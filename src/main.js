@@ -71,7 +71,6 @@ setStyle(document.body, {
     background: '#303030',
     padding: 0,
     margin: '0',
-
 })
 
 /**
@@ -116,48 +115,24 @@ editor = new CanvasElement(
 mapper = new CanvasElement(60, 380,
 	new MapElement(60, 380));
 
-const img = 
-	'img/Lenna.png'
-	// 'https://mdn.mozillademos.org/files/5397/rhino.jpg'
-	// 'img/rhino.jpg'
-	// 'img/climbing.jpg'
-
-photo_holder = new ImageElement(img)
-
-photo = new CanvasElement(
-	700, 880,
-	photo_holder
-);
-
 const open_callback = (result) => {
-	// photo_holder.load(result);
-
 	imageToData(result, (data, img) => {
 		// console.log('data---', data);
-		glProcessor.updateTexture('u_image', img);
+        glProcessor.updateTexture('u_image', img);
+        
 		glProcessor.canvas.width = img.width;
 		glProcessor.canvas.height = img.height;
 		glProcessor.draw();
 	})
 }
-const open_input = opener(open_callback);
 
+open_callback('img/Lenna.png');
+
+const open_input = opener(open_callback);
 const button = add_opener(open_callback);
 // photo_holder.load.bind(photo_holder)
 // handle_drop(document.body, photo_holder.load.bind(photo_holder))
 // document.body.appendChild(open_input);
-
-// dom(
-// 	[
-// 		button,
-// 		'br',
-// 		editor.canvas,
-// 		mapper.canvas,
-// 		photo.canvas,
-// 		glProcessor.canvas
-// 	]
-// )
-
 
 function layout() {
     var vbox = createEl('box', {
@@ -208,9 +183,42 @@ function layout() {
 
     makeDrag(divider, leftPane);
 
+    var info = createEl('div', {
+        padding: '4px',
+        color: '#ddd',
+        'font-size': '14px',
+        background: '#333',
+        height: '150px'
+    });
+    info.innerHTML = 'Info';
+
+    var navigator = createEl('div', {
+        padding: '4px',
+        color: '#ddd',
+        'font-size': '14px',
+        background: '#333',
+        height: '150px'
+    });
+    navigator.innerHTML = 'Navigator';
+
+    var status = createEl('div', {
+        padding: '4px',
+        color: '#ddd',
+        'font-size': '14px',
+        background: '#333',
+        height: '150px'
+    });
+    status.innerHTML = 'Status: ';
+ 
     var hboxDom = nest(
         hbox, [
-            nest(leftPane, [ editor.canvas ]),
+            nest(leftPane, [
+                editor.canvas,
+                info,
+                navigator,
+                status
+                // mapper.canvas
+            ]),
             divider,
             nest(centerPane, [ glProcessor.canvas] )
         ]
@@ -224,7 +232,7 @@ function layout() {
     )
 
     var ro = new ResizeObserver(els => els.forEach(element => {
-        var w = element.contentRect.width;
+        var w = element.contentRect.width - 4;
         editor.setSize(w, w);
         editor._draw();
     }))

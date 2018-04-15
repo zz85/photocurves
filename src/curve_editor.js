@@ -25,10 +25,7 @@ class GridArea {
 		this.helper = new MarkerBoxElement(0.5, 0.5)
 
 		this.children = [
-			// new CurveElement(x => x * x),
-			new CurveElement(curve),
-			// this.startMarker,
-			// this.endMarker,
+			new CurveElement(curve), // x => x * x
 			...this.points,
 			// this.helper
 		];
@@ -36,6 +33,9 @@ class GridArea {
 		register(this);
 		this.notifyPoints();
 	}
+	
+	// TODO get points
+	// TODO set points
 
 	notifyPoints() {
 		// notify('POINTS_UPDATED', [this.startMarker,...this.points, this.endMarker]);
@@ -76,7 +76,7 @@ class GridArea {
 
 	removePoint(point) {
 		if (point === this.startMarker || point === this.endMarker) {
-			// you can't rememove them!
+			// you can't remove them!
 			return;
 		}
 		const i = this.points.indexOf(point);
@@ -121,7 +121,7 @@ class GridArea {
 		this.notifyPoints();
 	}
 
-	mousedown(x, y, a, b) { // dblclick
+	mousedown(x, y, a, b) {
 		const box = new MarkerBoxElement(a / this.width, 1 - b / this.height);
 		this.children.push(box);
 		this.points.push(box);
@@ -565,7 +565,8 @@ class GradientStrip {
 
 class Editor {
 	constructor(width, height) {
-		this.gridArea = new GridArea(40, 40);
+		this.padding = 24;
+		this.gridArea = new GridArea(this.padding, this.padding);
 		this.vstrip = new GradientStrip();
 		this.setSize(width, height);
 
@@ -587,7 +588,7 @@ class Editor {
 		ctx.fillStyle = '#555'
 		ctx.fillRect(0, 0, width, height);
 
-		var padding = 40;
+		var padding = this.padding;
 		var stripWidth = 10;
 		var histoWidth = width - padding * 2;
 		var histoHeight = height - padding * 2;
